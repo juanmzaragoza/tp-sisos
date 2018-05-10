@@ -14,12 +14,42 @@ installIsValid() {
 	return 0
 }
 
+########################
 # realizar instalacion
+########################
 installSystem(){
 
+	echo ""
 	echo "El sistema será instalado por primera vez en su entorno"
-	mkdir "$GRUPO"
 
+	checkPerlVersion
+
+	echo "Para poder continuar, se le solicita que configure cada uno de los siguientes directorios"
+
+	read -n 1 -p "Establer directorio de ejecutables ($GRUPO/bin): " userinput
+	# checkear que el directorio no existe
+	# checkear que no se ingrese dirconfig
+	
+
+}
+
+# verifica la version de bash instalada
+checkPerlVersion(){
+
+	echo ""
+	echo "Comprobando version de Perl...."
+
+	PERL_VERSION=`perl -v`
+	RE_PERL_VERSION="This is perl [5-9].*$"
+	if [[ ! "$PERL_VERSION" =~ $RE_PERL_VERSION ]]
+	then
+		# TODO: loggear
+		echo "La versión instalada no cumple con los requerimientos de sistema [Perl >=5 ]"
+		exit 1
+	else
+		echo $PERL_VERSION
+		echo ""
+	fi
 }
 
 # realizar reparacion
