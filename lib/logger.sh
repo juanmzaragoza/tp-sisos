@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "ext.sh"
+source "lib/ext.sh"
 
 #################################################
 #
@@ -18,11 +18,11 @@ source "ext.sh"
 # $3: Mensaje de log
 #
 generateRow(){
-	$DATE=`date '+%Y-%m-%d %H:%M:%S'`
-	$USER=`echo $USER`
-	$ORIGIN=$1
-	$ERRORTYPE=$2
-	$MESSAGE=$3
+	DATE=`date '+%Y-%m-%d %H:%M:%S'`
+	USER=`echo $USER`
+	ORIGIN=$1
+	ERRORTYPE=$2
+	MESSAGE=$3
 	echo "$DATE-$USER-$ORIGIN-$ERRORTYPE-$MESSAGE"
 }
 
@@ -32,11 +32,22 @@ generateRow(){
 # $2: Comando, función o rutina que produce el evento que se registra en el log. Ej.: InstalO
 # $3: Tipo de mensaje: Informativo (INF), Alerta (ALE) Error (ERR)
 # $4: Mensaje de log
+# $5: Si es true, imprime mensaje sino no
 #
 saveLog(){
 
-	if canWriteFile
+	# imprimio mensaje
+	if [[ -z $5 ]] || $5
 	then
-		generateRow $2 $3 $4 > $1
+		echo "$4"
+	fi
+
+	# guardo en archivo
+	if ! fileExits $1
+	then
+		generateRow "$2" "$3" "$4" > "$1"
+	elif canWriteFile $1
+	then
+		generateRow "$2" "$3" "$4" >> "$1"
 	fi
 }

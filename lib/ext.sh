@@ -8,22 +8,6 @@
 #
 #################################################
 
-
-# ------------------------------------------------------
-# devuelve true si el usuario ha confirmado la operacion
-# $1: mensaje a mostrar
-# $2: respuesta que se esperamos como afirmativa
-#
-confirmPrompt(){
-	read -p "$1" userinput
-	if [[ "$userinput" == "$2" ]]
-	then
-		return 0
-	else
-		return 1
-	fi
-}
-
 # ----------------------------------------------------------------------
 # devuelve true si el path pasado como parametro existe y es una carpeta
 # $1: directorio que se quiere corroborar

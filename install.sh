@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source "lib/ext.sh"
+source "lib/logger.sh"
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # VARIABLES
@@ -20,6 +21,13 @@ LOGDIR="log" # directorio donde se depositan los logs de los comandos
 DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
 NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
 
+PRODUCT="InstalO"
+INTALLLOGS="$GRUPO/$CONFIGDIR/install.log"
+INFOLOG="INF"
+ALERTLOG="ALE"
+ERRORLOG="ERR"
+CONFIGFILE="$GRUPO/$CONFIGDIR/install.conf"
+
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # FUNCIONES
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -29,13 +37,43 @@ installIsValid() {
 	return 0
 }
 
+# $1: mensaje
+# $2: si es false no muestra el resultado por consola
+showInfo(){
+	saveLog "$INTALLLOGS" "$PRODUCT" "$INFOLOG" "$1" $2
+}
+
+showError(){
+	saveLog "$INTALLLOGS" "$PRODUCT" "$ERRORLOG" "$1" $2
+}
+
+showAlert(){
+	saveLog "$INTALLLOGS" "$PRODUCT" "$ALERTLOG" "$1" $2
+}
+
+# ------------------------------------------------------
+# devuelve true si el usuario ha confirmado la operacion
+# $1: mensaje a mostrar
+# $2: respuesta que se esperamos como afirmativa
+#
+confirmPrompt(){
+	read -p "$1" userinput
+	showInfo "$1 $userinput" false
+	if [[ "$userinput" == "$2" ]]
+	then
+		return 0
+	else
+		return 1
+	fi
+}
+
 ########################
 # realizar instalacion
 ########################
 installSystem(){
 
-	echo ""
-	echo "El sistema será instalado por primera vez en su entorno"
+	showInfo ""
+	showInfo "El sistema será instalado por primera vez en su entorno"
 
 	# corroborar version de perl
 	checkPerlVersion
@@ -44,7 +82,7 @@ installSystem(){
 	while true
 	do
 
-		echo "Para poder continuar, se le solicita que configure cada uno de los siguientes directorios"
+		showInfo "Para poder continuar, se le solicita que configure cada uno de los siguientes directorios"
 		# configurar con los valores ingresados por el usuario
 		configure
 
@@ -56,7 +94,7 @@ installSystem(){
 		then
 			break
 		fi
-		echo ""
+		showInfo ""
 
 	done
 	
@@ -66,19 +104,18 @@ installSystem(){
 # verifica la version de bash instalada
 checkPerlVersion(){
 
-	echo ""
-	echo "Comprobando version de Perl...."
+	showInfo ""
+	showInfo "Comprobando version de Perl...."
 
 	PERL_VERSION=`perl -v`
 	RE_PERL_VERSION="This is perl [5-9].*$"
 	if [[ ! "$PERL_VERSION" =~ $RE_PERL_VERSION ]]
 	then
-		# TODO: loggear
-		echo "La versión instalada no cumple con los requerimientos de sistema [Perl >=5 ]"
+		showError "La versión instalada no cumple con los requerimientos de sistema [Perl >=5 ]"
 		exit 1
 	else
-		echo $PERL_VERSION
-		echo ""
+		showInfo "$PERL_VERSION"
+		showInfo ""
 	fi
 }
 
@@ -99,31 +136,39 @@ readConfiguration(){
 	while true
 	do
 		read -p "Establecer directorio de $1 ($GRUPO/$2): " userfolder
+		showInfo "Establecer directorio de $1 ($GRUPO/$2):  $userfolder" false
+
 		TEMPDIR="$GRUPO/$userfolder"
 
-		# checkear que el directorio no existe
-		if directoryExists "$TEMPDIR"
+		# dejo por defecto el que estaba
+		if [[ -z "$userfolder" ]]
 		then
 
-			echo "El directorio ingresado ya existe"
+			showInfo "Directorio configurado: $GRUPO/$2"
+			break
+
+		# checkear que el directorio no existe
+		elif directoryExists "$TEMPDIR"
+		then
+
+			showAlert "El directorio ingresado ya existe"
 
 		# checkear que no se ingrese dirconfig
 		elif [[ "$userfolder" == "$CONFIGDIR" ]]
 		then
 
-			echo "El directorio no se puede llamar dirconf"
+			showAlert "El directorio no se puede llamar dirconf"
 
-		# dejo por defecto el que estaba
-		elif [[ -z "$userfolder" ]]
+		# no puedeo haber nombres de directorios duplicados
+		elif [[ " ${DIRS[*]} " == *" $userfolder "* ]]
 		then
 
-			echo "Directorio configurado: $GRUPO/$2"
-			break
+			showAlert "El directorio ya ha sido elegido para otro directorio. Repita con uno diferente"
 
 		else
 
 			DIRS[$3]=$userfolder
-			echo "Directorio configurado: $GRUPO/${DIRS[$3]}"
+			showInfo "Directorio configurado: $GRUPO/${DIRS[$3]}"
 			break
 
 		fi
@@ -134,17 +179,17 @@ readConfiguration(){
 
 # mostrar configuracion parcial
 showConfiguration(){
-	echo ""
-	echo "==============================================================================="
-	echo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
-	echo "==============================================================================="
-	echo "Librería del Sistema: dirconf"
+	showInfo ""
+	showInfo "==============================================================================="
+	showInfo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
+	showInfo "==============================================================================="
+	showInfo "Librería del Sistema: dirconf"
 	COUNT=0
 	for i in ${DIRS[@]}; do
-        echo "Directorio para ${NAMES[$COUNT]}: $i"
+        showInfo "Directorio para ${NAMES[$COUNT]}: $i"
         COUNT=`expr $COUNT + 1`
 	done
-	echo "Estado de instalación: LISTA"
+	showInfo "Estado de instalación: LISTA"
 
 }
 
@@ -155,36 +200,40 @@ repairSystem(){
 
 # el sistema ya se encuentra instalado
 showInfoSystem(){
-	echo ""
-	echo "Ya posee una versión del sistema instalada en su entorno"
+	showInfo ""
+	showAlert "Ya posee una versión del sistema instalada en su entorno"
 }
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # MAIN
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 main(){
-	echo ""
-	echo "============================================================================================================="
-	echo "    Bienvenido a la instalacion del sistema TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02"
-	echo "============================================================================================================="
-	echo ""
+	showInfo ""
+	showInfo "============================================================================================================="
+	showInfo "    Bienvenido a la instalacion del sistema TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02"
+	showInfo "============================================================================================================="
+	showInfo ""
 
-	echo "Este sistema lo guiará en la instalación de TPSO en su sistema operativo"
-	echo ""
-	echo "Asegurese de tener los permisos necesario para el directorio donde va a "
-	echo "realizar la instalación como una version de PERL 5 o superior"
-	read -n 1 -p "Presione una tecla para continuar..." continueinput
-	echo ""
+	showInfo "Este sistema lo guiará en la instalación de TPSO en su sistema operativo"
+	showInfo ""
+	showInfo "Asegurese de tener los permisos necesario para el directorio donde va a "
+	showInfo "realizar la instalación como una version de PERL 5 o superior"
+	
+	read -n 1 -p "Presione una tecla para continuar... $continueinput" continueinput
+	showInfo "Presione una tecla para continuar... $continueinput" false
+	showInfo ""
 
 	# iniciar instalacion
-	if ! directoryExists "$GRUPO"
+	if ! fileExits "$CONFIGFILE"
 	then
 
+		showInfo "Se procedera con la instalacion"
 		installSystem
 
 	elif ! installIsValid
 	then
 
+		showInfo "Se procedera con la reparacion"
 		repairSystem
 
 	else

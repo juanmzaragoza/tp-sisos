@@ -1,1 +1,5 @@
-grupo02
+# carpeta grupo
+grupo02/*
+!grupo02/dirconf
+grupo02/dirconf/*
+!grupo02/dirconf/.gitkeep
