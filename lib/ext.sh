@@ -31,3 +31,18 @@ fileExits(){
 canWriteFile(){
 	return `test -w "$1"`
 }
+
+#
+# copia archivos sino termina con error
+# $1: archivo a copiar
+# $2: carpeta destino
+#
+cpOrExitOnError(){
+	cp "$1" "$2"
+	if [ $? != 0 ]; then # contiene el resultado de la ultima ejecucion
+		showError "Error al copiar $1 a $2"
+		exit 1
+	else
+		showInfo "Copiado archivo $1 a $2"
+	fi	
+}

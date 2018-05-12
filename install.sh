@@ -20,6 +20,8 @@ LOGDIR="log" # directorio donde se depositan los logs de los comandos
 
 DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
 NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
+INDEXBINDIR=0
+INDEXMASTERDIR=1
 
 PRODUCT="InstalO"
 INTALLLOGS="$GRUPO/$CONFIGDIR/install.log"
@@ -97,7 +99,21 @@ installSystem(){
 		showInfo ""
 
 	done
-	
+
+	# crear estructura de directorios
+	createDirectories
+
+	# mover tablas de /mae a $GRUPO/maestros
+	moveToMaster
+
+	# mover ejecutables de /bin a $GRUPO/ejecutables
+	moveToBin
+
+	# guardar configuracion
+	saveConfigurationFile
+
+	showInfo "Felicitaciones! Ha finalizado con exito la instalacion del sistema!!!"
+	showInfo ""
 	
 }
 
@@ -190,6 +206,81 @@ showConfiguration(){
         COUNT=`expr $COUNT + 1`
 	done
 	showInfo "Estado de instalación: LISTA"
+
+}
+
+# crear estructura de directorios
+createDirectories(){
+
+	showInfo ""
+	COUNT=0
+	for i in ${DIRS[@]}
+	do
+        mkdir "$GRUPO/$i" 
+        showInfo "Se creó el directorio de ${NAMES[$COUNT]} en $GRUPO/$i"
+        COUNT=`expr $COUNT + 1`
+	done
+	showInfo "Finalizada con exito la creacion de directorios"
+	showInfo ""
+
+}
+
+# mover tablas de /mae a $GRUPO/maestros
+moveToMaster(){
+
+	RESULT=`ls mae/* 2>/dev/null`
+	if [ $? != 0 ]
+	then
+	   	showAlert "La carpeta mae/ se encuentra vacia"
+	else
+		for i in $RESULT
+		do
+			cpOrExitOnError "$i" "$GRUPO/${DIRS[$INDEXMASTERDIR]}/"
+		done
+	fi
+	showInfo "Finalizada con exito la copia de archivos maestros"
+	showInfo ""
+}
+
+# mover ejecutables de /bin a $GRUPO/ejecutables
+moveToBin(){
+
+	RESULT=`ls bin/* 2>/dev/null`
+	if [ $? != 0 ]
+	then
+	   	showAlert "La carpeta bin/ se encuentra vacia"
+	else
+		for i in $RESULT
+		do
+			cpOrExitOnError "$i" "$GRUPO/${DIRS[$INDEXBINDIR]}/"
+		done
+	fi
+	showInfo "Finalizada con exito la copia de archivos ejecutables"
+	showInfo ""
+	
+
+}
+
+# guardar archivo de configuracion
+saveConfigurationFile(){
+	
+	DATE=`date '+%Y/%m/%d %H:%M:%S'`
+
+	COUNT=0
+	for i in ${DIRS[@]}
+	do
+		LINE="${NAMES[$COUNT]}-$GRUPO/$i-$USER-$DATE"
+		if ! fileExits "$CONFIGFILE"
+		then
+			echo "$LINE" > "$CONFIGFILE"
+		else
+			echo "$LINE" >> "$CONFIGFILE"
+		fi
+        showInfo "Agregado ${NAMES[$COUNT]} a la configuracion "
+        COUNT=`expr $COUNT + 1`
+	done
+	showInfo "Finalizada con exito la configuracion del sistema"
+	showInfo ""
 
 }
 
