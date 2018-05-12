@@ -264,12 +264,12 @@ moveToBin(){
 # guardar archivo de configuracion
 saveConfigurationFile(){
 	
-	DATE=`date '+%Y/%m/%d %H:%M:%S'`
+	SAVECONFIGURATIONDATE=`date '+%Y/%m/%d %H:%M:%S'`
 
 	COUNT=0
 	for i in ${DIRS[@]}
 	do
-		LINE="${NAMES[$COUNT]}-$GRUPO/$i-$USER-$DATE"
+		LINE="${NAMES[$COUNT]}-$GRUPO/$i-$USER-$SAVECONFIGURATIONDATE"
 		if ! fileExits "$CONFIGFILE"
 		then
 			echo "$LINE" > "$CONFIGFILE"
