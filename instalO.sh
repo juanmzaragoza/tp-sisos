@@ -38,7 +38,8 @@ CONFIGFILE="$GRUPO/$CONFIGDIR/install.conf"
 
 #
 # Devuelve si la instalacion es valid 
-# 1 = false 0 = true 
+# 1 = false 0 = true
+#
 installIsValid() {
 	
 	showInfo "Se procederá con la verificación de archivos y carpetas necesarios para el sistema"
@@ -61,9 +62,15 @@ installIsValid() {
 		return 1
 	fi
 
+	# corroboro que se encuentren todos los archivos maestros
+	if ! verifyTablesAndMasters
+	then
+		return 1
+	fi
+
 	return 0
 }
-
+# verifica que existe el config file
 verifyConfigFile(){
 	showInfo "Corroborando si existe el archivo de configuración..."
 	if ! fileExits "$CONFIGFILE"
@@ -76,7 +83,7 @@ verifyConfigFile(){
 	showInfo ""
 	return 0
 }
-
+# verifica que existan todas las carpetas en el config file
 verifyFoldersConfig(){
 	showInfo "Corroborando que todas las carpetas se encuentren configuradas..."
 	COUNT=0
@@ -96,7 +103,7 @@ verifyFoldersConfig(){
 	showInfo ""
 	return 0
 }
-
+# verifica que se encuentren todas las carpetas del config file
 verifyFoldersExists(){
 	showInfo "Corroborando si existe las carpetas configuradas en el archivo de configuración..."
 	while read -r lineConfig
@@ -113,6 +120,46 @@ verifyFoldersExists(){
 
 	done < "$CONFIGFILE"
 	showInfo "Carpetas OK"
+	showInfo ""
+	return 0
+}
+# verifica si los tablas y archivos maestros existen
+verifyTablesAndMasters(){
+	showInfo "Corroborando si se encuentran las tablas y archivos maestros..."
+	MASTERDIRCONFIG=`grep "^maestros-\(.*\)-.*-.*$" "$CONFIGFILE" | sed "s/^\(maestros\)-\(.*\)-.*-.*$/\2/"`
+
+	if ! fileExits "$MASTERDIRCONFIG/PPI.mae"
+	then
+		showAlert "No existe el archivo $MASTERDIRCONFIG/PPI.mae"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $MASTERDIRCONFIG/PPI.mae OK"
+
+	if ! fileExits "$MASTERDIRCONFIG/p-s.mae"
+	then
+		showAlert "No existe el archivo $MASTERDIRCONFIG/p-s.mae"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $MASTERDIRCONFIG/p-s.mae OK"
+
+	if ! fileExits "$MASTERDIRCONFIG/T1.tab"
+	then
+		showAlert "No existe el archivo $MASTERDIRCONFIG/T1.tab"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $MASTERDIRCONFIG/T1.tab OK"
+
+	if ! fileExits "$MASTERDIRCONFIG/T2.tab"
+	then
+		showAlert "No existe el archivo $MASTERDIRCONFIG/T2.tab"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $MASTERDIRCONFIG/T2.tab OK"
+	showInfo "Archivos maestros OK"
 	showInfo ""
 	return 0
 }
@@ -381,12 +428,20 @@ saveConfigurationFile(){
 
 }
 
+########################
 # realizar reparacion
+########################
 repairSystem(){
-	echo "Necesitar reparar el sistema"
+
+	showInfo ""
+
+	# corroborar version de perl
+	checkPerlVersion
 }
 
+########################
 # el sistema ya se encuentra instalado
+########################
 showInfoSystem(){
 	showInfo ""
 	showConfiguration
@@ -432,7 +487,7 @@ main(){
 
 		if [[ "$REPAIR_SYSTEM" -eq 0 ]]
 		then
-			showInfo "Se procedera con la reparacion"
+			showInfo "Se procedera con la reparacion "
 			repairSystem
 		else
 			showAlert "El sistema contiene errores en sus configuración"
