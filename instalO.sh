@@ -271,7 +271,12 @@ configure(){
 	
 }
 
+#
 # leer la configuracion que eligio el usuario
+# $1 carpeta de ejecutables, maestros, etc
+# $2 directorio de $1 
+# $3 posicion del parametros de los arrays NAMES Y DIRS
+# $4 si es 0 no consulta por un directorio a definir por el usuario
 readConfiguration(){
 
 	while true
@@ -431,12 +436,29 @@ saveConfigurationFile(){
 ########################
 # realizar reparacion
 ########################
-repairSystem(){
+repairSystem(){	## TODO: repara el borrado de todos los archivos excepto lo que hay en dirconf
 
 	showInfo ""
 
 	# corroborar version de perl
 	checkPerlVersion
+
+	find "$GRUPO/" -type d ! -name "$CONFIGDIR" -delete
+
+	# crear estructura de directorios
+	createDirectories
+
+	# mover tablas de /mae a $GRUPO/maestros
+	moveToMaster
+
+	# mover ejecutables de /bin a $GRUPO/ejecutables
+	moveToBin
+
+	# guardar configuracion
+	saveConfigurationFile
+
+	showInfo "Felicitaciones! Ha finalizado con exito la reparacion del sistema!!!"
+	showInfo ""
 }
 
 ########################
