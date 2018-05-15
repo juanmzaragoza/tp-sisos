@@ -6,6 +6,8 @@ source "lib/logger.sh"
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # VARIABLES
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+OPT_REPAIR="-r"
+
 GRUPO="$PWD/grupo02"
 
 CONFIGDIR="dirconf" # directorio del archivo de configuracion
@@ -33,9 +35,85 @@ CONFIGFILE="$GRUPO/$CONFIGDIR/install.conf"
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # FUNCIONES
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# devuelve true si es valida
+
+#
+# Devuelve si la instalacion es valid 
+# 1 = false 0 = true 
 installIsValid() {
-	# 1 = false 0 = true
+	
+	showInfo "Se procederá con la verificación de archivos y carpetas necesarios para el sistema"
+
+	# corroboro si existe el archivo de confiuracion
+	if ! verifyConfigFile
+	then
+		return 1
+	fi
+
+	# corrobora que esten todas las carpetas del sistema dentro del config
+	if ! verifyFoldersConfig
+	then
+		return 1
+	fi
+
+	# corroboro si todas las carpetas se encuentran creadas
+	if ! verifyFoldersExists
+	then
+		return 1
+	fi
+
+	return 0
+}
+
+verifyConfigFile(){
+	showInfo "Corroborando si existe el archivo de configuración..."
+	if ! fileExits "$CONFIGFILE"
+	then
+		showAlert "El archivo de $CONFIGFILE no existe"
+		showInfo ""
+		return 1
+	fi
+	showInfo "Existe $CONFIGFILE OK"
+	showInfo ""
+	return 0
+}
+
+verifyFoldersConfig(){
+	showInfo "Corroborando que todas las carpetas se encuentren configuradas..."
+	COUNT=0
+	for i in ${NAMES[@]}
+	do
+		LINECOUNT=`grep -c "^${NAMES[$COUNT]}-.*" "$CONFIGFILE"`
+		if [[ "$LINECOUNT" -eq 0 ]]
+		then
+			showAlert "El directorio de ${NAMES[$COUNT]} no se encuentra definido"
+			showInfo ""
+			return 1
+		fi
+		showInfo "Carpeta ${NAMES[$COUNT]} configurada en config OK"
+        COUNT=`expr $COUNT + 1`
+	done
+	showInfo "Carpetas del sistema configuradas OK"
+	showInfo ""
+	return 0
+}
+
+verifyFoldersExists(){
+	showInfo "Corroborando si existe las carpetas configuradas en el archivo de configuración..."
+	while read -r lineConfig
+	do
+
+		LINECONFIG=`echo "$lineConfig" | sed "s/^.*-\(.*\)-.*-.*/\1/"`
+		if ! directoryExists "$LINECONFIG"
+		then
+			showAlert "La carpeta $LINECONFIG no existe"
+			showInfo ""
+			return 1
+		fi
+		showInfo "Carpeta $LINECONFIG OK"
+
+	done < "$CONFIGFILE"
+	showInfo "Carpetas OK"
+	showInfo ""
 	return 0
 }
 
@@ -89,7 +167,7 @@ installSystem(){
 		configure
 
 		# mostrar configuracion
-		showConfiguration
+		showPartialConfiguration
 
 		# confirmacion de instalacion
 		if confirmPrompt "¿Confirma la instalación? (SI-NO): " "SI"
@@ -194,12 +272,8 @@ readConfiguration(){
 }
 
 # mostrar configuracion parcial
-showConfiguration(){
-	showInfo ""
-	showInfo "==============================================================================="
-	showInfo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
-	showInfo "==============================================================================="
-	showInfo "Librería del Sistema: dirconf"
+showPartialConfiguration(){
+	printHeaderConfig
 	COUNT=0
 	for i in ${DIRS[@]}; do
         showInfo "Directorio para ${NAMES[$COUNT]}: $i"
@@ -207,6 +281,29 @@ showConfiguration(){
 	done
 	showInfo "Estado de instalación: LISTA"
 
+}
+
+# mostrar configuracion del sistema
+showConfiguration(){
+	printHeaderConfig
+	showInfo "Archivo de configuracion: $CONFIGFILE"
+	COUNT=0
+	while read -r lineConfig
+	do
+		FILESDIR=`echo "$lineConfig" | sed "s/^\(.*\)-.*-.*-.*/\1/"`
+		DIR=`echo "$lineConfig" | sed "s/^.*-\(.*\)-.*-.*/\1/"`
+		showInfo "Directorio para $FILESDIR: $DIR"
+        COUNT=`expr $COUNT + 1`
+	done <  "$CONFIGFILE"
+
+}
+
+printHeaderConfig(){
+	showInfo ""
+	showInfo "==============================================================================="
+	showInfo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
+	showInfo "==============================================================================="
+	showInfo "Librería del Sistema: dirconf"
 }
 
 # crear estructura de directorios
@@ -292,13 +389,22 @@ repairSystem(){
 # el sistema ya se encuentra instalado
 showInfoSystem(){
 	showInfo ""
-	showAlert "Ya posee una versión del sistema instalada en su entorno"
+	showConfiguration
 }
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # MAIN
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 main(){
+
+	# obtener parametros
+	if [[ "$1" = "$OPT_REPAIR" ]]
+	then
+		REPAIR_SYSTEM=0
+	else
+		REPAIR_SYSTEM=1
+	fi
+
 	showInfo ""
 	showInfo "============================================================================================================="
 	showInfo "    Bienvenido a la instalacion del sistema TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02"
@@ -321,14 +427,22 @@ main(){
 		showInfo "Se procedera con la instalacion"
 		installSystem
 
-	elif ! installIsValid
+	elif ! installIsValid 
 	then
 
-		showInfo "Se procedera con la reparacion"
-		repairSystem
+		if [[ "$REPAIR_SYSTEM" -eq 0 ]]
+		then
+			showInfo "Se procedera con la reparacion"
+			repairSystem
+		else
+			showAlert "El sistema contiene errores en sus configuración"
+			showAlert "Ejecute la opción -r para reparar el sistema"
+			showAlert "Ejemplo: ./install.sh -r"
+		fi
 
 	else
 
+		showAlert "Ya posee una versión del sistema instalada en su entorno"
 		showInfoSystem
 
 	fi
@@ -336,4 +450,4 @@ main(){
 	echo ""
 }
 
-main
+main $@
