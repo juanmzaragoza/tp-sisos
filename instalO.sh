@@ -121,6 +121,9 @@ installSystem(){
 	# mover ejecutables de /bin a $GRUPO/ejecutables
 	moveToBin
 
+	# mover novedades de /data a $GRUPO/arribos
+	moveToArrive
+
 	# guardar configuracion
 	saveConfigurationFile
 
@@ -297,6 +300,23 @@ moveToBin(){
 
 }
 
+# mover novedades de /data a $GRUPO/arrive
+moveToArrive(){
+
+	RESULT=`ls data/* 2>/dev/null`
+	if [ $? != 0 ]
+	then
+	   	showAlert "La carpeta data/ se encuentra vacia"
+	else
+		for i in $RESULT
+		do
+			cpOrExitOnError "$i" "$GRUPO/${DIRS[$INDEXARRIVEDIR]}/"
+		done
+	fi
+	showInfo "Finalizada con exito la copia de archivos novedades"
+	showInfo ""
+}
+
 # guardar archivo de configuracion
 saveConfigurationFile(){
 	
@@ -330,7 +350,8 @@ repairSystem(){	## TODO: repara el borrado de todos los archivos excepto lo que 
 	# corroborar version de perl
 	checkPerlVersion
 
-	find "$GRUPO/" -type d ! -name "$CONFIGDIR" -delete
+	# elimina y crea la carpeta de grupo
+	restartDiretories
 
 	# crear estructura de directorios
 	createDirectories
@@ -341,11 +362,21 @@ repairSystem(){	## TODO: repara el borrado de todos los archivos excepto lo que 
 	# mover ejecutables de /bin a $GRUPO/ejecutables
 	moveToBin
 
+	# mover novedades de /data a $GRUPO/arribos
+	moveToArrive
+
 	# guardar configuracion
 	saveConfigurationFile
 
 	showInfo "Felicitaciones! Ha finalizado con exito la reparacion del sistema!!!"
 	showInfo ""
+}
+
+restartDiretories(){
+	rm "$GRUPO"/* -rf
+	mkdir "$GRUPO/dirconf"
+	# solo para el respositorio
+	touch "$GRUPO/dirconf/.gitkeep"
 }
 
 ########################
@@ -391,14 +422,14 @@ main(){
 		showInfo "Se procedera con la instalacion"
 		installSystem
 
-	elif ! installIsValid 
+	elif ! installIsValid  #si la instalacion no es valida
 	then
 
-		if [[ "$REPAIR_SYSTEM" -eq 0 ]]
+		if [[ "$REPAIR_SYSTEM" -eq 0 ]] # y eligio reparar el sistema
 		then
 			showInfo "Se procedera con la reparacion "
 			repairSystem
-		else
+		else # sino muestra ayuda
 			showAlert "El sistema contiene errores en sus configuración"
 			showAlert "Ejecute la opción -r para reparar el sistema"
 			showAlert "Ejemplo: ./install.sh -r"
