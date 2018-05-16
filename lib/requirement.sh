@@ -3,6 +3,7 @@
 GRUPO="$PWD/grupo02"
 
 CONFIGDIR="dirconf" # directorio del archivo de configuracion
+LIBDIR="lib" # directorio donde se depositan las librerias
 BINDIR="bin" # directorio de ejecutables
 MASTERDIR="master" # directorio de archivos maestros y tablas del sistema
 ARRIVEDIR="arrive" # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
@@ -116,4 +117,35 @@ verifyTablesAndMasters(){
 	showInfo ""
 	return 0
 }
+# verifica si las librerias auxialiares existen
+verifyLibs(){
+	showInfo "Corroborando si se encuentran las librerias auxialiares..."
+	LIBDIRFULL="$GRUPO/$LIBDIR"
 
+	if ! fileExits "$LIBDIRFULL/ext.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/ext.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/ext.sh OK"
+
+	if ! fileExits "$LIBDIRFULL/logger.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/logger.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/logger.sh OK"
+
+	if ! fileExits "$LIBDIRFULL/requirement.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/requirement.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/requirement.sh OK"
+	showInfo "Archivos de librerias auxialiares OK"
+	showInfo ""
+	return 0
+}
