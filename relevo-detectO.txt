@@ -1,0 +1,23 @@
+Al procesar los archivos que llegan debo generar un unico archivo por pais.
+
+- Precondicion: Ambiente inicializado. Sino, log y muerte.
+DEMONIO DETECTO
+_ Debe ser un script que vaya al directorio de arrribos.
+- Si hay archivos, analizar por arriba si los acepta o no para interpretar.
+- Una vez que acomoda los que rechaza y los que acepta, debe llamar al interprete.
+- Se duerme un tiempo X y vuelve a empezar.
+
+Incluir: 
+	- contador de ciclos (variable de ambiente?)
+	- validador de nombres de archivo
+		- si nombre valido, hay que verificar el archivo.
+			- si archivo vacio, se rechaza
+			- si archivo no es de texto normal, se rechaza
+			- sino, se acepta
+		- si nombre invalido, se rechaza
+	- finalizada la validación, correr el interpretO
+
+Precondiciones para el interpretO
+	- Debe haber archivos en el folder de aceptados
+	- No debe haber corriendo un interpretO (variable bool de si isInterpreteRunning?)
+
