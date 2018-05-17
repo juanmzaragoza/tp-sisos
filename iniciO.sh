@@ -112,10 +112,10 @@ executeDemonio(){
 	then
 		bash detectO.sh 
 		showInfo "Demonio inicializado" true
-		showInfo "Para detener demonio ejecutar stopO.sh" true
+		showInfo "Para detener demonio ejecutar stopO.sh"
 	fi
 
-	showInfo "Demonio corriendo bajo process id: $PID" true
+	showInfo "Demonio corriendo bajo process id: $PID"
 }
 
 
@@ -134,7 +134,7 @@ showAlert(){
 
 ############# MAIN #############
 
-main(){
+main(
 	echo "hola"
 	
 	#1
@@ -161,10 +161,9 @@ main $@
 # el sistema nunca fue inicializado
 #	verificar existencia del config, existencia de todos los directorios en el config y verificar las carpetas
 #	verificar existencia: comandos(detecto, stopO, interpretO, reportO), archivos (maestros, dirconf/install.conf)
-#	dar permiso de ejecucion al detectO
-#	verificar permisos
-#	setear variables de ambientes necesarias en el demonio y guardarlas en el profile (no olvidar >>) (borrarlas en el stopO)
-#	preguntar si corre domonio (grep detecto devuelve la linea con PID)
+#	verificar los permisos, corregir e informar cuales fueron modificados y cuales no
+#	setear variables de ambientes necesarias en el demonio (borrarlas en el stopO) -> export o declare -x
+#	correr domonio (grep detecto devuelve la linea con PID)
 		#si corre, logueo process id
 		#sino, inicializar demonio, mostrar y loguear pid
 

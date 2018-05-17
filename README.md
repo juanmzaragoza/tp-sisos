@@ -21,6 +21,7 @@ Para utilizar el sistema se recomienda utilizar `Ubuntu 14.04` en adelante que c
 * PERL@>v5
 * bash@>v4
 * tar@>1.2
+* pidof
  
 ## Descarga del paquete
 
@@ -53,7 +54,7 @@ Al descomprimir el paquete, encontraremos dentro del directorio creado las sigui
 
 ### Requerimientos previos
 
-Para poder instalar el sistema debe encontrarse dentro de la carpeta que ha descompimido. A este carpeta la denominaremos `ROOT_FOLDER` de ahora en más.
+Para poder instalar el sistema, debe encontrarse dentro de la carpeta que ha descompimido. A este carpeta la denominaremos `ROOT_FOLDER` de ahora en más.
 
 Luego, necesita tener permisos para escribir la carpeta `grupo02/` (con permisos de administrador):
 
