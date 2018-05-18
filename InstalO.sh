@@ -48,11 +48,17 @@ installIsValid() {
 		return 1
 	fi
 
+	# corroboro que se encuentren todas los ejecutables
+	if ! verifyBins
+	then
+		return 1
+	fi
+
 	# corrobora que se encuentran todas las librerias auxiliares del sistema
 	if ! verifyLibs
 	then
 		return 1
-	fi	
+	fi
 
 	return 0
 }
@@ -257,8 +263,8 @@ printHeaderConfig(){
 	showInfo "==============================================================================="
 	showInfo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
 	showInfo "==============================================================================="
-	showInfo "Librería del Sistema: dirconf"
-	showInfo "Librerías auxiliares del Sistema: lib"
+	showInfo "Librería del Sistema: $CONFIGDIR"
+	showInfo "Librerías auxiliares del Sistema: $LIBDIR"
 }
 
 # crear estructura de directorios
@@ -275,8 +281,8 @@ createDirectories(){
 	done
 
 	# creacion carpeta de librerias auxiliares
-	mkdir "$GRUPO/lib" 
-	showInfo "Se creó el directorio de librerias auxiliares en $GRUPO/lib"
+	mkdir "$GRUPO/$LIBDIR" 
+	showInfo "Se creó el directorio de librerias auxiliares en $GRUPO/$LIBDIR"
 
 	showInfo "Finalizada con exito la creacion de directorios"
 	showInfo ""
@@ -325,11 +331,11 @@ moveToLib(){
 	RESULT=`ls lib/* 2>/dev/null`
 	if [ $? != 0 ]
 	then
-	   	showAlert "La carpeta lib/ se encuentra vacia"
+	   	showAlert "La carpeta $LIBDIR/ se encuentra vacia"
 	else
 		for i in $RESULT
 		do
-			cpOrExitOnError "$i" "$GRUPO/lib/"
+			cpOrExitOnError "$i" "$GRUPO/$LIBDIR/"
 		done
 	fi
 	showInfo "Finalizada con exito la copia de archivos de librerias auxiliares"
@@ -359,6 +365,16 @@ saveConfigurationFile(){
         showInfo "Agregado ${NAMES[$COUNT]} a la configuracion "
         COUNT=`expr $COUNT + 1`
 	done
+
+	# linea para librerias de auxiliares
+	LINE="librerias-$GRUPO/$LIBDIR-$USER-$SAVECONFIGURATIONDATE"
+	LINEXISTS=`grep "^librerias-.*-.*-.*$" "$CONFIGFILE"`
+	if [[ -z "$LINEXISTS" ]] # si no hay ninguna linea ya configurada
+	then
+		echo "$LINE" >> "$CONFIGFILE"
+	fi
+	showInfo "Agregada librerias a la configuracion "
+
 	showInfo "Finalizada con exito la configuracion del sistema"
 	showInfo ""
 

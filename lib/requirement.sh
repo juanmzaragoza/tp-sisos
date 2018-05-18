@@ -13,6 +13,7 @@ PROCESSEDDIR="processed" # directorio donde se depositan los archivos procesados
 REPORTDIR="report" # Directorio donde se depositan los reportes
 LOGDIR="log" # directorio donde se depositan los logs de los comandos
 
+EXECUTABLES=("IniciO.sh" "DetectO.sh" "StopO.sh" "InterpretO.sh" "ReportO.pl")
 DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
 NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
 INDEXBINDIR=0
@@ -114,6 +115,24 @@ verifyTablesAndMasters(){
 	fi
 	showInfo "Archivo $MASTERDIRCONFIG/T2.tab OK"
 	showInfo "Archivos maestros OK"
+	showInfo ""
+	return 0
+}
+# verifica si los ejecutables existen
+verifyBins(){
+	showInfo "Corroborando si se encuentran los archivos ejecutables..."
+	LIBBINFULL="$GRUPO/$BINDIR"
+	for i in ${EXECUTABLES[@]}
+	do
+		if ! fileExits "$LIBBINFULL/$i"
+		then
+			showAlert "No existe el archivo $LIBBINFULL/$i"
+			showAlert ""
+			return 1
+		fi
+		showInfo "Archivo $LIBBINFULL/$i OK"
+	done
+	showInfo "Archivos ejecutables OK"
 	showInfo ""
 	return 0
 }

@@ -13,7 +13,7 @@ REGEX="^\(.*\)-\(.*\)-.*-.*$"
 verificarArchivoConfiguracion(){
 	if ! verifyConfigFile
 	then
-		showError "No se puede continuar ya que no se encontro el archivo de configuracion." true
+		showError "No se puede continuar ya que no se encontro el archivo de configuracion."
 		exit 1
 	fi	
 }
@@ -38,7 +38,7 @@ verifyComandos(){
 		do
 			if [ ! -f "$COMANDO" ]
 			then
-				showError "El comando $COMANDO no existe" true
+				showError "El comando $COMANDO no existe"
 				showInfo ""
 				exit 1
 			fi
@@ -54,7 +54,7 @@ verifyComandos(){
 permissionToDetecto(){
 	chmod +x "detectO.sh"
 
-	showInfo "Se otorgo permiso de ejecucion a detectO.sh" true
+	showInfo "Se otorgo permiso de ejecucion a detectO.sh"
 
 }
 
