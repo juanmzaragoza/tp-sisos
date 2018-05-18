@@ -13,7 +13,7 @@ REGEX="^\(.*\)-\(.*\)-.*-.*$"
 verificarArchivoConfiguracion(){
 	if ! verifyConfigFile
 	then
-		showError "No se encontro el archivo de configuracion" true
+		showError "No se puede continuar ya que no se encontro el archivo de configuracion." true
 		exit 1
 	fi	
 }
@@ -90,29 +90,21 @@ declareVariables(){
 		NOMBRE=`echo "$lineConfig" | sed "s/^\(.*\)-.*-.*-.*/\1/"`
 		VALOR=`echo "$lineConfig" | sed "s/^.*-\(.*\)-.*-.*/\1/"`
 
-		eval "export $NOMBRE"="$VALOR"
-		 #"$NOMBRE"
-
-		echo "nombre: $NOMBRE"
-		echo "valor: ${!NOMBRE}"
-	#export $FILESDIR
-	#echo "Se declara la variable $NOMBRE con valor $VALOR"
+		eval "$NOMBRE"="$VALOR"
+		export NOMBRE
 	done <  "$CONFIGFILE"
-
-	#NOMBRE="leandro"
-	#declare "$NOMBRE"="hola"
-	#echo "a ver que onda ${!NOMBRE}"	
 }
 
 
 ############# 5 EJECUCION DE DEMONIO #############
 executeDemonio(){
-	PID=`pidof "detectO.sh"`
+	PID=`pgrep -f "detectO.sh"`
 	if [ -z "$PID" ];
 	then
-		bash detectO.sh 
+		bash detectO.sh &
 		showInfo "Demonio inicializado" true
-		showInfo "Para detener demonio ejecutar stopO.sh" true
+		showInfo "Para detener demonio escribir en la consola 'bash stopO.sh $!'" true
+		PID=$! 
 	fi
 
 	showInfo "Demonio corriendo bajo process id: $PID" true
@@ -135,8 +127,6 @@ showAlert(){
 ############# MAIN #############
 
 main(){
-	echo "hola"
-	
 	#1
 	verificarArchivoConfiguracion
 	
@@ -151,9 +141,7 @@ main(){
 	declareVariables
 	
 	#6
-	#executeDemonio
-
-	echo "chau"
+	executeDemonio
 }
 
 main $@
