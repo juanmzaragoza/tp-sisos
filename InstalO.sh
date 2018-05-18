@@ -319,6 +319,17 @@ moveToBin(){
 			cpOrExitOnError "$i" "$GRUPO/${DIRS[$INDEXBINDIR]}/"
 		done
 	fi
+
+	# dar permisos de ejecucion a IniciO.sh
+	`chmod +x "$GRUPO/${DIRS[$INDEXBINDIR]}/${EXECUTABLES[$INDEXINICIOEXEC]}" 2>/dev/null`
+	if [[ -x "$GRUPO/${DIRS[$INDEXBINDIR]}/${EXECUTABLES[$INDEXINICIOEXEC]}" ]]
+	then
+		showInfo "Permisos a IniciO.sh OK"
+	else
+		showError "ERROR - No se pudo dar permisos a IniciO.sh"
+		exit 1
+	fi	
+
 	showInfo "Finalizada con exito la copia de archivos ejecutables"
 	showInfo ""
 	
@@ -472,7 +483,7 @@ main(){
 		else # sino muestra ayuda
 			showAlert "El sistema contiene errores en sus configuración"
 			showAlert "Ejecute la opción -r para reparar el sistema"
-			showAlert "Ejemplo: ./install.sh -r"
+			showAlert "Ejemplo: $GRUPO/InstalO.sh -r"
 		fi
 
 	else

@@ -4,10 +4,9 @@ source "lib/ext.sh"
 source "lib/logger.sh"
 source "lib/requirement.sh"
 
-COMANDOACTUAL="INICIO"
-LOGFILE="$GRUPO/$CONFIGDIR/inicio.log"
-REGEX="^\(.*\)-\(.*\)-.*-.*$"
-
+COMANDOACTUAL="IniciO"
+LOGFILE="$GRUPO/$LOGDIR/inicio.log"
+DETECTO="DetectO.sh"
 
 ############# 1 VERIFICAR ARCHIVO CONFIGURACION #############
 verificarArchivoConfiguracion(){
@@ -20,51 +19,78 @@ verificarArchivoConfiguracion(){
 
 ############# 2 VERIFICAR INICIALIZACION #############
 verificarInicializacion(){
-	verifyFoldersConfig
-	verifyFoldersExists
-	#verifyTablesAndMasters
-	verifyComandos
+
+	# corrobora que esten todas las carpetas del sistema dentro del config
+	if ! verifyFoldersConfig
+	then
+		return 1
+	fi
+
+	# corroboro si todas las carpetas se encuentran creadas
+	if ! verifyFoldersExists
+	then
+		return 1
+	fi
+
+	# corroboro que se encuentren todos los archivos maestros
+	if ! verifyTablesAndMasters
+	then
+		return 1
+	fi
+
+	# corroboro que se encuentren todas los ejecutables
+	if ! verifyBins
+	then
+		return 1
+	fi
+
+	# corrobora que se encuentran todas las librerias auxiliares del sistema
+	if ! verifyLibs
+	then
+		return 1
+	fi
+
 	permissionToDetecto
 }
 
 
 ############# 2.1 VERIFICACION COMANDOS #############
-verifyComandos(){
+# verifyComandos(){
 
-	COMANDOS=("detectO.sh" "interpretO.sh" "reportO.sh" "stopO.sh")
-	showInfo "Corroborando que todas los comandos existan..."
-	COUNT=0
-	for COMANDO in ${COMANDOS[@]}
-		do
-			if [ ! -f "$COMANDO" ]
-			then
-				showError "El comando $COMANDO no existe"
-				showInfo ""
-				exit 1
-			fi
-		done
-	showInfo "Se encontraron todos los comandos"
-	showInfo ""
+# 	COMANDOS=("detectO.sh" "interpretO.sh" "reportO.sh" "stopO.sh")
+# 	showInfo "Corroborando que todas los comandos existan..."
+# 	COUNT=0
+# 	for COMANDO in ${COMANDOS[@]}
+# 		do
+# 			if [ ! -f "$COMANDO" ]
+# 			then
+# 				showError "El comando $COMANDO no existe"
+# 				showInfo ""
+# 				exit 1
+# 			fi
+# 		done
+# 	showInfo "Se encontraron todos los comandos"
+# 	showInfo ""
 
-	echo "verify comandos ok"
-}
+# 	echo "verify comandos ok"
+# }
 
 
 ############# 2.2 PERMISO A DETECTO #############
 permissionToDetecto(){
-	chmod +x "detectO.sh"
+	chmod +x "$GRUPO/$BINDIR/$DETECTO"
 
-	showInfo "Se otorgo permiso de ejecucion a detectO.sh"
+	showInfo "Se otorgo permiso de ejecucion a $DETECTO"
 
 }
 
-
 ############# 3 VERIFICACION DE PERMISOS DE LECTURA/EJECUCION #############
+# $1 - Tipo de archivos a buscar en el config file (maestros o ejecutables)
+# $2 - Expresion para obtener permiso de archivo
+# $3 - Permiso a comparar
+# $4 - Nombre del permiso verificado
 checkFilesPermission(){
-	#1 Tipo de archivos a buscar en el config file (maestros o ejecutables)
-	#2 Expresion para obtener permiso de archivo
-	#3 Permiso a comparar
-	#4 Nombre del permiso verificado
+	
 	
 	EXPRESION="s#^""$1""-\([^-]*\)-[^-]*-[^-]*$""#\1#"
 	DIRECTORIO=`grep "^$1" "$CONFIGFILE" | sed "$EXPRESION"`
@@ -85,25 +111,28 @@ checkFilesPermission(){
 
 ############# 4 DECLARACION DE VARIABLES DE AMBIENTE #############
 declareVariables(){
-	while read -r lineConfig
-	do
-		NOMBRE=`echo "$lineConfig" | sed "s/^\(.*\)-.*-.*-.*/\1/"`
-		VALOR=`echo "$lineConfig" | sed "s/^.*-\(.*\)-.*-.*/\1/"`
-
-		eval "$NOMBRE"="$VALOR"
-		export NOMBRE
-	done <  "$CONFIGFILE"
+	export GRUPO # directorio de instalacion
+	export CONFIGDIR # directorio del archivo de configuracion
+	export LIBDIR # directorio donde se depositan las librerias
+	export BINDIR # directorio de ejecutables
+	export MASTERDIR # directorio de archivos maestros y tablas del sistema
+	export ARRIVEDIR # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
+	export ACCEPTEDDIR # directorio donde se depositan temporalmente las novedades aceptadas
+	export REJECTEDDIR # directorio donde se depositan todos los archivos rechazados
+	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
+	export REPORTDIR # Directorio donde se depositan los reportes
+	export LOGDIR # directorio donde se depositan los logs de los comandos
 }
 
 
 ############# 5 EJECUCION DE DEMONIO #############
 executeDemonio(){
-	PID=`pgrep -f "detectO.sh"`
+	PID=`pgrep -f "$DETECTO"`
 	if [ -z "$PID" ];
 	then
-		bash detectO.sh &
-		showInfo "Demonio inicializado" true
-		showInfo "Para detener demonio escribir en la consola 'bash stopO.sh $!'" true
+		bash "$GRUPO/$BINDIR/$DETECTO" &
+		showInfo "Demonio inicializado"
+		showInfo "Para detener demonio escribir en la consola 'bash $GRUPO/$BINDIR/StopO.sh $!'"
 		PID=$! 
 	fi
 
@@ -131,7 +160,13 @@ main(){
 	verificarArchivoConfiguracion
 	
 	#2
-	verificarInicializacion
+	if ! verificarInicializacion
+	then
+		showError "El sistema contiene errores en sus configuración"
+		showError "Ejecute la opción -r para reparar el sistema"
+		showError "Ejemplo: $GRUPO/$BINDIR/InstalO.sh -r"
+		exit 1
+	fi
 
 	#3
 	checkFilesPermission 'maestros' 's/.\(.\).\+/\1/' 'r' 'lectura'

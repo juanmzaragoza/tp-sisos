@@ -14,6 +14,8 @@ REPORTDIR="report" # Directorio donde se depositan los reportes
 LOGDIR="log" # directorio donde se depositan los logs de los comandos
 
 EXECUTABLES=("IniciO.sh" "DetectO.sh" "StopO.sh" "InterpretO.sh" "ReportO.pl")
+INDEXINICIOEXEC=0
+
 DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
 NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
 INDEXBINDIR=0

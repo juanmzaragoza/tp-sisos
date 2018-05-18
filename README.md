@@ -18,10 +18,10 @@ Instrucciones de descarga, los requisitos del sistema, las instrucciones de inst
 
 Para utilizar el sistema se recomienda utilizar `Ubuntu 14.04` en adelante que cuente con
 
-* PERL@>v5
-* bash@>v4
-* tar@>1.2
-* pidof
+* PERL@>=v5
+* bash@>=v4
+* tar@>=1.2.x
+* pgrep@>=3.3.x
  
 ## Descarga del paquete
 
@@ -48,7 +48,7 @@ Al descomprimir el paquete, encontraremos dentro del directorio creado las sigui
 * `grupo02`: la carpeta donde irá instalado el sistema. Por defecto, contiene creada la carpeta `dirconf`
 * `lib`: archivos de librerias auxiliares utilizadas por todos los comandos
 * `mae`: archivos de tablas y maestros necesarios para que el sistema funcione correctamente
-* `instalO.sh`: archivo de instalacion
+* `InstalO.sh`: archivo de instalacion
 
 ## Instalación
 
@@ -104,6 +104,32 @@ Además dentro de la carpeta `dirconf/` se encontrará el archivo `install.conf`
 También, dentro de la carpeta `lib/` se encontrará todas las librerías auxiliares para la ejecución de los comandos.
 
 ## Ejecutar el sistema por primera vez
+
+Para ejecutar el sistema por primera vez debe ejecutar desde el `ROOT_DIR`:
+
+	./grupo02/bin/IniciO.sh
+
+o bien, desde cualquier path:
+
+	ROOT_DIR/grupo02/bin/IniciO.sh
+
+Este comando validará que los archivos de configuración y carpetas se encuentren bien configuradas, con los permisos correspondientes. En caso de que la validación falle, el sistema mostrará un error indicando como reparar el sistema.
+
+En caso de que el sistema no haya sido nunca ejecutado, mostrará el PID del procesado ejecutado o del proceso que se ya se estaba ejecutando.
+
+**Nota:** Anotar el PID devuelto por el comando para luego poder pararlo con `StopO.sh`.
+
+## Detener el comandoo
+
+El comando anterior ejecuta un demonio que debe ser detenido (en caso de que asi se lo requiera) de la siguiente forma:
+	
+	./grupo02/bin/StopO.sh PID
+
+o bien, desde cualquier path
+
+	ROOT_DIR/grupo02/bin/StopO.sh PID
+
+donde `PID` es el devuelto por el `Inicio.sh`.
 
 ### Ejecutar comandos
 
