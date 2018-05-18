@@ -20,7 +20,6 @@ ERRORLOG="ERR"
 # *************
 
 CYCLE_COUNTER=0
-DEMON_RUNNING=0
 
 # *************
 # LOG AUXILIAR
@@ -68,9 +67,10 @@ rest(){
 verifyName(){
 	y=${1%.*}
 	CLEANED_NAME=`echo ${y##*/}`
-	CHECKED_NAME=`echo $CLEANED_NAME | grep '.*-.*-.*-.*'`
+	CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-.*$'`
 	if [ -z "$CHECKED_NAME" ]
 	then
+		showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
 		return 1
 	fi
 	COUNTRY_CODE=`echo $CHECKED_NAME | sed 's/\(.*\)-.*-.*-.*/\1/'`
@@ -79,10 +79,35 @@ verifyName(){
 	RESULT=`grep "$COUNTRY_CODE-.*-$SYSTEM_CODE-.*" $MASTER_FILE`
 	if [ -z "$RESULT" ]
 	then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El maestro no tiene registros con la combinacion $COUNTRY_CODE y $SYSTEM_CODE"
+		return 1
+	fi
+	YEAR=`echo $CHECKED_NAME | sed 's/.*-.*-\(.*\)-.*/\1/' | grep "[0-9][0-9][0-9][0-9]"`
+	if [ -z $YEAR ]
+	then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el año de la novedad"
+		return 1
+	fi
+	MONTH=`echo $CHECKED_NAME | sed 's/.*-.*-.*-\(.*\)/\1/' | grep "[0-1][0-9]"`
+	if [ -z $MONTH ]
+	then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el mes de la novedad"
+		return 1 
+	fi
+	CURRENT_YEAR=`date +%Y`
+	CURRENT_MONTH=`date +%m`
+	if (( $YEAR <= 2016 || $YEAR > $CURRENT_YEAR ))
+	then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El año del período esta fuera del rango"
+		return 1
+	elif (( $YEAR != $CURRENT_YEAR )) ;	then
+		return 0
+	elif (( $YEAR == $CURRENT_YEAR && $MONTH > $CURRENT_MONTH )) ; then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El período es incorrecto"
 		return 1
 	else
 		return 0
-	fi	
+	fi
 }
 
 #Verifica vacio de archivo
@@ -92,6 +117,7 @@ verifyEmpty(){
 	then
 		return 0
 	else
+		showError "Novedad $1 Rechazada. Motivo: El archivo esta vacio"
 		return 1
 	fi
 }
@@ -104,6 +130,7 @@ verifyTextFile(){
 	then
 		return 0
 	else
+		showError "Novedad $1 Rechazada. Motivo: El archivo no es de texto"
 		return 1
 	fi
 }
@@ -112,10 +139,11 @@ verifyTextFile(){
 #$1 : Path del archivo
 #$2 : 1 si se rechaza, 0 si se acepta
 manageFile(){
-	if [ $2 = 0 ]
+	if [ "$2" = 0 ]
 	then
 		# mvOrFail "$1" "$ACCEPTEDDIR"
 		mvOrFail "$1" "test/accepted"
+		showInfo "Novedad $1 Aceptada"
 	else
 		# mvOrFail "$1" "$REJECTEDDIR"
 		mvOrFail "$1" "test/rejected"
@@ -124,24 +152,24 @@ manageFile(){
 
 # Procesa la validacion y deteccion de archivos aceptados
 processFiles() {
-	for FILE_PATH in $1/*; do
+	for FILE_PATH in "${1}/"*; do
 		if fileExits "$FILE_PATH"
 		then
-			if verifyName $FILE_PATH
+			if verifyName "$FILE_PATH"
 			then
-				if verifyEmpty $FILE_PATH
+				if verifyEmpty "$FILE_PATH"
 				then
-					if verifyTextFile $FILE_PATH
+					if verifyTextFile "$FILE_PATH"
 					then
-						manageFile $FILE_PATH 0
+						manageFile "$FILE_PATH" 0
 					else
-						manageFile $FILE_PATH 1
+						manageFile "$FILE_PATH" 1
 					fi
 				else
-					manageFile $FILE_PATH 1
+					manageFile "$FILE_PATH" 1
 				fi
 			else
-				manageFile $FILE_PATH 1
+				manageFile "$FILE_PATH" 1
 			fi
 		fi
 	done
@@ -154,13 +182,15 @@ main() {
 		showError "Ambiente invalido"
 		return 1
 	fi
-	while [ $DEMON_RUNNING = 0 ]
+	while true
 	do			
-		if directoryEmpty $ARRIVEDIR
+		CYCLE_COUNTER=$(( CYCLE_COUNTER + 1))
+		showInfo "Ciclo Numero $CYCLE_COUNTER" 
+		if directoryEmpty "$ARRIVEDIR"
 		then
-			showAlert $ARRIVEDIR" has no files"
+			showAlert "$ARRIVEDIR has no files"
 		else
-			processFiles $ARRIVEDIR
+			processFiles "$ARRIVEDIR"
 		fi
 		callInterpreter
 		rest
