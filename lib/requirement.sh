@@ -3,6 +3,7 @@
 GRUPO="$PWD/grupo02"
 
 CONFIGDIR="dirconf" # directorio del archivo de configuracion
+LIBDIR="lib" # directorio donde se depositan las librerias
 BINDIR="bin" # directorio de ejecutables
 MASTERDIR="master" # directorio de archivos maestros y tablas del sistema
 ARRIVEDIR="arrive" # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
@@ -11,6 +12,9 @@ REJECTEDDIR="rejected" # directorio donde se depositan todos los archivos rechaz
 PROCESSEDDIR="processed" # directorio donde se depositan los archivos procesados 
 REPORTDIR="report" # Directorio donde se depositan los reportes
 LOGDIR="log" # directorio donde se depositan los logs de los comandos
+
+EXECUTABLES=("IniciO.sh" "DetectO.sh" "StopO.sh" "InterpretO.sh" "ReportO.pl")
+INDEXINICIOEXEC=0
 
 DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
 NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
@@ -116,4 +120,53 @@ verifyTablesAndMasters(){
 	showInfo ""
 	return 0
 }
+# verifica si los ejecutables existen
+verifyBins(){
+	showInfo "Corroborando si se encuentran los archivos ejecutables..."
+	LIBBINFULL="$GRUPO/$BINDIR"
+	for i in ${EXECUTABLES[@]}
+	do
+		if ! fileExits "$LIBBINFULL/$i"
+		then
+			showAlert "No existe el archivo $LIBBINFULL/$i"
+			showAlert ""
+			return 1
+		fi
+		showInfo "Archivo $LIBBINFULL/$i OK"
+	done
+	showInfo "Archivos ejecutables OK"
+	showInfo ""
+	return 0
+}
+# verifica si las librerias auxialiares existen
+verifyLibs(){
+	showInfo "Corroborando si se encuentran las librerias auxialiares..."
+	LIBDIRFULL="$GRUPO/$LIBDIR"
 
+	if ! fileExits "$LIBDIRFULL/ext.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/ext.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/ext.sh OK"
+
+	if ! fileExits "$LIBDIRFULL/logger.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/logger.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/logger.sh OK"
+
+	if ! fileExits "$LIBDIRFULL/requirement.sh"
+	then
+		showAlert "No existe el archivo $LIBDIRFULL/requirement.sh"
+		showAlert ""
+		return 1
+	fi
+	showInfo "Archivo $LIBDIRFULL/requirement.sh OK"
+	showInfo "Archivos de librerias auxialiares OK"
+	showInfo ""
+	return 0
+}
