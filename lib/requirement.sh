@@ -16,16 +16,19 @@ LOGDIR="log" # directorio donde se depositan los logs de los comandos
 EXECUTABLES=("IniciO.sh" "DetectO.sh" "StopO.sh" "InterpretO.sh" "ReportO.pl")
 INDEXINICIOEXEC=0
 
-DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR)
-NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs)
-INDEXBINDIR=0
+DIRS=($BINDIR $MASTERDIR $ARRIVEDIR $ACCEPTEDDIR $REJECTEDDIR $PROCESSEDDIR $REPORTDIR $LOGDIR) # directorios a configurar
+NAMES=(ejecutables maestros arribos aceptados rechazados procesados reportes logs) # nombre de los directorios a configurar en el install.conf
+# indices de los arrays de arriba
+INDEXBINDIR=0 
 INDEXMASTERDIR=1
 INDEXARRIVEDIR=2
 
 INFOLOG="INF"
 ALERTLOG="ALE"
 ERRORLOG="ERR"
-CONFIGFILE="$GRUPO/$CONFIGDIR/install.conf"
+CONFIGFILE="$GRUPO/$CONFIGDIR/install.conf" # config file
+
+DETECTOSLEEP=60 # tiempo que duerme DetectO.sh
 
 # verifica que existe el config file
 verifyConfigFile(){

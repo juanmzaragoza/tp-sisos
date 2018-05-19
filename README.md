@@ -105,13 +105,13 @@ También, dentro de la carpeta `lib/` se encontrará todas las librerías auxili
 
 ## Ejecutar el sistema por primera vez
 
-Para ejecutar el sistema por primera vez debe ejecutar desde el `ROOT_DIR`:
+Para ejecutar el sistema por primera vez, debe ejecutar desde el `ROOT_DIR` (teniendo en cuenta que la carpeta configurada para ejecutables en la instalación fue `BIN_DIR`):
 
-	./grupo02/bin/IniciO.sh
+	./grupo02/BIN_DIR/IniciO.sh
 
 o bien, desde cualquier path:
 
-	ROOT_DIR/grupo02/bin/IniciO.sh
+	ROOT_DIR/grupo02/BIN_DIR/IniciO.sh
 
 Este comando validará que los archivos de configuración y carpetas se encuentren bien configuradas, con los permisos correspondientes. En caso de que la validación falle, el sistema mostrará un error indicando como reparar el sistema.
 
@@ -123,11 +123,11 @@ En caso de que el sistema no haya sido nunca ejecutado, mostrará el PID del pro
 
 El comando anterior ejecuta un demonio que debe ser detenido (en caso de que asi se lo requiera) de la siguiente forma:
 	
-	./grupo02/bin/StopO.sh PID
+	./grupo02/BIN_DIR/StopO.sh PID
 
 o bien, desde cualquier path
 
-	ROOT_DIR/grupo02/bin/StopO.sh PID
+	ROOT_DIR/grupo02/BIN_DIR/StopO.sh PID
 
 donde `PID` es el devuelto por el `Inicio.sh`.
 
