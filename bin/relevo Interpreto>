@@ -1,0 +1,10 @@
+relevo Interpreto>
+
+- Voy a la carpeta aceptados y reviso si hay algo para leer.
+- Recorro la lista de archivos que haya:
+- Creo la carpeta con el nombre de   la fecha en la carpeta de procesados
+Por cada Archivo
+- reviso si esta en la carpeta de procesados del dia.  Si esta, rechazado. Si no esta, sigo.
+- Obtengo pais y sistema, y voy al archivo t1 que me dice SEPARADOR DE CAMPO y SEPARADOR DE DECIMALES.
+- Con esos datos, voy al archivo T2 que me dice que campos tiene y de que tipo.
+- Con toda esa info, voy al archivo y leo.
