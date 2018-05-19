@@ -4,7 +4,7 @@
 # INCLUDES
 # *************
 
-source "lib/logger.sh"
+source "$GRUPO/$LIBDIR/logger.sh"
 
 # *************
 # VARIABLES DE INICIO
@@ -52,7 +52,7 @@ showError(){
 }
 
 showAlert(){
-	saveLog "$DETECTLOGS" "$PRODUCT" "$ALERTLOG" "$1" $2
+	saveLog "$LOGFILE" "$PRODUCT" "$ALERTLOG" "$1" $2
 }
 
 # *************
@@ -62,30 +62,32 @@ showAlert(){
 
 # 1 = false 0 = true
 validateEnvironment(){
-	if ! verifyConfigFile
-	then
-		showError "No se puede continuar ya que no se encontro el archivo de configuracion."
-		exit 1
-	fi	
+	# if ! verifyConfigFile
+	# then
+	# 	showError "No se puede continuar ya que no se encontro el archivo de configuracion."
+	# 	exit 1
+	# fi	
+	return 0
 }
 
 # Dispara en back-ground el interprete
 # Debe verificar antes que haya archivos aceptados, sino ni lo llama
 callInterpreter(){
-	if directoryEmpty "$ACCEPTEDDIR"
-	then
-		showInfo "No hay archivos aceptados para interpretar"
-		return
-	fi
-	PID=`pgrep -f "$CHILD_PRODUCT"`
-	if [ -z "$PID" ];
-	then
-		bash "$GRUPO/$BINDIR/$CHILD_PRODUCT" &
-		PID=$!
-		showInfo "Interprete inicializado con id $PID"
-	else
-		showInfo "Invocacion del interprete pospuesta para el siguiente ciclo"
-	fi
+	# if directoryEmpty "$ACCEPTEDDIR"
+	# then
+	# 	showInfo "No hay archivos aceptados para interpretar"
+	# 	return
+	# fi
+	# PID=`pgrep -f "$CHILD_PRODUCT"`
+	# if [ -z "$PID" ];
+	# then
+	# 	bash "$GRUPO/$BINDIR/$CHILD_PRODUCT" &
+	# 	PID=$!
+	# 	showInfo "Interprete inicializado con id $PID"
+	# else
+	# 	showInfo "Invocacion del interprete pospuesta para el siguiente ciclo"
+	# fi
+	echo "INTERPRETE"
 }
 
 # Pone a dormir al demonio segun la configuracion de sleep
@@ -108,7 +110,7 @@ verifyName(){
 	fi
 	COUNTRY_CODE=`echo $CHECKED_NAME | sed 's/\(.*\)-.*-.*-.*/\1/'`
 	SYSTEM_CODE=`echo $CHECKED_NAME | sed 's/.*-\(.*\)-.*-.*/\1/'`
-	MASTER="$MASTERDIR/$MASTER_FILE"
+	MASTER="$GRUPO/$MASTERDIR/$MASTER_FILE"
 	RESULT=`grep "$COUNTRY_CODE-.*-$SYSTEM_CODE-.*" $MASTER`
 	if [ -z "$RESULT" ]
 	then
@@ -174,10 +176,10 @@ verifyTextFile(){
 manageFile(){
 	if [ "$2" = 0 ]
 	then
-		mvOrFail "$1" "$ACCEPTEDDIR"
+		mvOrFail "$1" "$GRUPO/$ACCEPTEDDIR"
 		showInfo "Novedad $1 Aceptada"
 	else
-		mvOrFail "$1" "$REJECTEDDIR"
+		mvOrFail "$1" "$GRUPO/$REJECTEDDIR"
 	fi
 }
 
@@ -217,11 +219,11 @@ main() {
 	do			
 		CYCLE_COUNTER=$(( CYCLE_COUNTER + 1))
 		showInfo "Ciclo Numero $CYCLE_COUNTER" 
-		if directoryEmpty "$ARRIVEDIR"
+		if directoryEmpty "$GRUPO/$ARRIVEDIR"
 		then
-			showAlert "$ARRIVEDIR has no files"
+			showAlert "$GRUPO/$ARRIVEDIR has no files"
 		else
-			processFiles "$ARRIVEDIR"
+			processFiles "$GRUPO/$ARRIVEDIR"
 		fi
 		callInterpreter
 		rest
