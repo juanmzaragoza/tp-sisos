@@ -59,3 +59,20 @@ cpOrExitOnError(){
 		showInfo "Copiado archivo $1 a $2"
 	fi	
 }
+
+#
+# mueve archivos sino termina con error
+# $1: archivo a mover
+# $2: carpeta destino
+# Retorna 0 en caso de éxito 
+# 		  1 en caso de fallo
+mvOrFail(){
+	mv "$1" "$2"
+	if [ $? != 0 ]; then # contiene el resultado de la ultima ejecucion
+		showError "Error al copiar $1 a $2"
+		return 1
+	else
+		showInfo "Movido archivo $1 a $2"
+		return 0
+	fi	
+}
