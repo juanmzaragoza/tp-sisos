@@ -122,6 +122,7 @@ declareVariables(){
 	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
 	export REPORTDIR # Directorio donde se depositan los reportes
 	export LOGDIR # directorio donde se depositan los logs de los comandos
+	export DETECTOSLEEP # tiempo que duerme DetectO.sh
 }
 
 
