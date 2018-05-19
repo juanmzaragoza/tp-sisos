@@ -35,7 +35,6 @@ INFOLOG="INF"
 ALERTLOG="ALE"
 ERRORLOG="ERR"
 CYCLE_COUNTER=0
-DETECTOSLEEP=5
 
 # *************
 # LOG AUXILIAR
@@ -73,7 +72,7 @@ validateEnvironment(){
 # Dispara en back-ground el interprete
 # Debe verificar antes que haya archivos aceptados, sino ni lo llama
 callInterpreter(){
-	# if directoryEmpty "$ACCEPTEDDIR"
+	# if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
 	# then
 	# 	showInfo "No hay archivos aceptados para interpretar"
 	# 	return
