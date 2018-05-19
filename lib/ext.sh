@@ -16,6 +16,19 @@ directoryExists(){
 	return `test -d "$1"`
 }
 
+# ----------------------------------------------------------------------
+# devuelve true si el path pasado como parametro es una carpeta vacia
+# $1: directorio que se quiere corroborar
+#
+directoryEmpty(){
+	if [ -z "$(ls -A $1)" ]
+	then
+		return 0
+	else
+		return 1
+	fi
+}
+
 #  --------------------------------------------------------------
 # devuelve true si el archivo existe y tiene permisos de lectura
 # $1: archivo que se quiere corroborar

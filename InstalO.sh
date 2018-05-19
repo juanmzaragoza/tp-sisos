@@ -48,6 +48,18 @@ installIsValid() {
 		return 1
 	fi
 
+	# corroboro que se encuentren todas los ejecutables
+	if ! verifyBins
+	then
+		return 1
+	fi
+
+	# corrobora que se encuentran todas las librerias auxiliares del sistema
+	if ! verifyLibs
+	then
+		return 1
+	fi
+
 	return 0
 }
 
@@ -121,6 +133,9 @@ installSystem(){
 	# mover ejecutables de /bin a $GRUPO/ejecutables
 	moveToBin
 
+	# mover librerias auxiliares de /lib a $GRUPO/lib
+	moveToLib
+
 	# guardar configuracion
 	saveConfigurationFile
 
@@ -192,6 +207,12 @@ readConfiguration(){
 
 			showAlert "El directorio no se puede llamar dirconf"
 
+		# checkear que no se ingrese lib (nombre reservado por nosotros)
+		elif [[ "$userfolder" == "$LIBDIR" ]]
+		then
+
+			showAlert "El directorio no se puede llamar lib"
+
 		# no puedeo haber nombres de directorios duplicados
 		elif [[ " ${DIRS[*]} " == *" $userfolder "* ]]
 		then
@@ -242,7 +263,8 @@ printHeaderConfig(){
 	showInfo "==============================================================================="
 	showInfo " Configuracion TP SO7508 Primer Cuatrimestre 2018. Tema O Copyright © Grupo 02 "
 	showInfo "==============================================================================="
-	showInfo "Librería del Sistema: dirconf"
+	showInfo "Librería del Sistema: $CONFIGDIR"
+	showInfo "Librerías auxiliares del Sistema: $LIBDIR"
 }
 
 # crear estructura de directorios
@@ -250,12 +272,18 @@ createDirectories(){
 
 	showInfo ""
 	COUNT=0
+	# creacion carpetas del sistema
 	for i in ${DIRS[@]}
 	do
         mkdir "$GRUPO/$i" 
         showInfo "Se creó el directorio de ${NAMES[$COUNT]} en $GRUPO/$i"
         COUNT=`expr $COUNT + 1`
 	done
+
+	# creacion carpeta de librerias auxiliares
+	mkdir "$GRUPO/$LIBDIR" 
+	showInfo "Se creó el directorio de librerias auxiliares en $GRUPO/$LIBDIR"
+
 	showInfo "Finalizada con exito la creacion de directorios"
 	showInfo ""
 
@@ -291,13 +319,42 @@ moveToBin(){
 			cpOrExitOnError "$i" "$GRUPO/${DIRS[$INDEXBINDIR]}/"
 		done
 	fi
+
+	# dar permisos de ejecucion a IniciO.sh
+	`chmod +x "$GRUPO/${DIRS[$INDEXBINDIR]}/${EXECUTABLES[$INDEXINICIOEXEC]}" 2>/dev/null`
+	if [[ -x "$GRUPO/${DIRS[$INDEXBINDIR]}/${EXECUTABLES[$INDEXINICIOEXEC]}" ]]
+	then
+		showInfo "Permisos a IniciO.sh OK"
+	else
+		showError "ERROR - No se pudo dar permisos a IniciO.sh"
+		exit 1
+	fi	
+
 	showInfo "Finalizada con exito la copia de archivos ejecutables"
 	showInfo ""
 	
 
 }
 
+# mover librerias auxiliares de /lib a $GRUPO/lib
+moveToLib(){
+
+	RESULT=`ls lib/* 2>/dev/null`
+	if [ $? != 0 ]
+	then
+	   	showAlert "La carpeta $LIBDIR/ se encuentra vacia"
+	else
+		for i in $RESULT
+		do
+			cpOrExitOnError "$i" "$GRUPO/$LIBDIR/"
+		done
+	fi
+	showInfo "Finalizada con exito la copia de archivos de librerias auxiliares"
+	showInfo ""
+}
+
 # guardar archivo de configuracion
+# notar que corrobora si el archivo existe y en ese caso solo inserto la linea si no hay ninguna configurada
 saveConfigurationFile(){
 	
 	SAVECONFIGURATIONDATE=`date '+%Y/%m/%d %H:%M:%S'`
@@ -306,15 +363,29 @@ saveConfigurationFile(){
 	for i in ${DIRS[@]}
 	do
 		LINE="${NAMES[$COUNT]}-$GRUPO/$i-$USER-$SAVECONFIGURATIONDATE"
-		if ! fileExits "$CONFIGFILE"
+		if ! fileExits "$CONFIGFILE" # si el archivo no existe
 		then
-			echo "$LINE" > "$CONFIGFILE"
-		else
-			echo "$LINE" >> "$CONFIGFILE"
+			echo "$LINE" > "$CONFIGFILE"		
+		else # si el archivo existe
+			LINEXISTS=`grep "^${NAMES[$COUNT]}-.*-.*-.*$" "$CONFIGFILE"`
+			if [[ -z "$LINEXISTS" ]] # si no hay ninguna linea ya configurada
+			then
+				echo "$LINE" >> "$CONFIGFILE"
+			fi
 		fi
         showInfo "Agregado ${NAMES[$COUNT]} a la configuracion "
         COUNT=`expr $COUNT + 1`
 	done
+
+	# linea para librerias de auxiliares
+	LINE="librerias-$GRUPO/$LIBDIR-$USER-$SAVECONFIGURATIONDATE"
+	LINEXISTS=`grep "^librerias-.*-.*-.*$" "$CONFIGFILE"`
+	if [[ -z "$LINEXISTS" ]] # si no hay ninguna linea ya configurada
+	then
+		echo "$LINE" >> "$CONFIGFILE"
+	fi
+	showInfo "Agregada librerias a la configuracion "
+
 	showInfo "Finalizada con exito la configuracion del sistema"
 	showInfo ""
 
@@ -330,7 +401,8 @@ repairSystem(){	## TODO: repara el borrado de todos los archivos excepto lo que 
 	# corroborar version de perl
 	checkPerlVersion
 
-	find "$GRUPO/" -type d ! -name "$CONFIGDIR" -delete
+	# elimina y crea la carpeta de grupo
+	restartDiretories
 
 	# crear estructura de directorios
 	createDirectories
@@ -341,11 +413,21 @@ repairSystem(){	## TODO: repara el borrado de todos los archivos excepto lo que 
 	# mover ejecutables de /bin a $GRUPO/ejecutables
 	moveToBin
 
+	# mover librerias auxiliares de /lib a $GRUPO/lib
+	moveToLib
+
 	# guardar configuracion
 	saveConfigurationFile
 
 	showInfo "Felicitaciones! Ha finalizado con exito la reparacion del sistema!!!"
 	showInfo ""
+}
+
+restartDiretories(){
+	rm "$GRUPO"/* -rf
+	mkdir "$GRUPO/dirconf"
+	# solo para el respositorio
+	touch "$GRUPO/dirconf/.gitkeep"
 }
 
 ########################
@@ -391,17 +473,17 @@ main(){
 		showInfo "Se procedera con la instalacion"
 		installSystem
 
-	elif ! installIsValid 
+	elif ! installIsValid  #si la instalacion no es valida
 	then
 
-		if [[ "$REPAIR_SYSTEM" -eq 0 ]]
+		if [[ "$REPAIR_SYSTEM" -eq 0 ]] # y eligio reparar el sistema
 		then
 			showInfo "Se procedera con la reparacion "
 			repairSystem
-		else
+		else # sino muestra ayuda
 			showAlert "El sistema contiene errores en sus configuración"
 			showAlert "Ejecute la opción -r para reparar el sistema"
-			showAlert "Ejemplo: ./install.sh -r"
+			showAlert "Ejemplo: $GRUPO/InstalO.sh -r"
 		fi
 
 	else
