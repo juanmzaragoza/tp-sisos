@@ -104,12 +104,16 @@ processFiles() {
 	CURRENT_DATE=`date +%F`
 	if ! directoryExists "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
 	then
+		chmod +w "$GRUPO/$PROCESSEDDIR"
 		mkdir "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
 	fi
 	for FILE_PATH in "${1}/"*; do
+		
 		y=${1%.*}
 		CLEANED_NAME=`echo ${y##*/}`
+		echo "CLEANED_NAMEis $CLEANED_NAME"
 		CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-.*$'`
+		echo "CHECKED_NAME is $CHECKED_NAME"
 		if [ -z "$CHECKED_NAME" ]
 		then
 			showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
@@ -143,6 +147,7 @@ processFiles() {
 				echo ""
 				((i++))
 			done
+		fi
 	done
 }
 
@@ -152,15 +157,14 @@ main() {
 		showError "Ambiente invalido"
 		return 1
 	fi
-	while true
-	do			
-		if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
-		then
-			showAlert "$GRUPO/$ACCEPTEDDIR has no files"
-		else
-			processFiles "$GRUPO/$ACCEPTEDIR"
-		fi
-	done
+	if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
+	then
+		showAlert "$GRUPO/$ACCEPTEDDIR has no files"
+	else
+		echo "ARRANCA PROCES para $GRUPO/$ACCEPTEDDIR"
+		processFiles "$GRUPO/$ACCEPTEDDIR"
+		echo "FINALIZA PROCES"
+	fi
 }
 
 main

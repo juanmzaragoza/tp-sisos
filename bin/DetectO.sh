@@ -72,20 +72,20 @@ validateEnvironment(){
 # Dispara en back-ground el interprete
 # Debe verificar antes que haya archivos aceptados, sino ni lo llama
 callInterpreter(){
-	# if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
-	# then
-	# 	showInfo "No hay archivos aceptados para interpretar"
-	# 	return
-	# fi
-	# PID=`pgrep -f "$CHILD_PRODUCT"`
-	# if [ -z "$PID" ];
-	# then
-	# 	bash "$GRUPO/$BINDIR/$CHILD_PRODUCT" &
-	# 	PID=$!
-	# 	showInfo "Interprete inicializado con id $PID"
-	# else
-	# 	showInfo "Invocacion del interprete pospuesta para el siguiente ciclo"
-	# fi
+	if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
+	then
+		showInfo "No hay archivos aceptados para interpretar"
+		return
+	fi
+	PID=`pgrep -f "$CHILD_PRODUCT"`
+	if [ -z "$PID" ];
+	then
+		bash "$GRUPO/$BINDIR/$CHILD_PRODUCT.sh" &
+		PID=$!
+		showInfo "Interprete inicializado con id $PID"
+	else
+		showInfo "Invocacion del interprete pospuesta para el siguiente ciclo"
+	fi
 	echo "INTERPRETE"
 }
 
