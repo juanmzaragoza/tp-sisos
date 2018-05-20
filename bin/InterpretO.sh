@@ -69,6 +69,37 @@ checkIfProcessed() {
 	fi
 }
 
+# $1: Codigo Pais
+# $2: Codigo sistema
+# Hay que definir antes de llamar al array ROWS
+buildHeader() {
+	HEADER_LIST=`grep "$1-$2-.*$" "$T2_FILE"`
+	while read -r line
+	do
+		FIELD_NAME=`echo "$line" | sed "s/^$1-$2-\(.*\)-.*-.*$/\1/"`
+		FIELD_TYPE=`echo "$line" | sed "s/^$1-$2-.*-.*-\(.*\)$/\1/"`
+		ROWS+=("$FIELD_NAME"-"$FIELD_TYPE")
+	done <<< "$HEADER_LIST"
+}
+
+# $1 : Path al archivo
+# $2 : Separador de campos
+# Hay que definir antes de llamar al array VALUES
+buildValues() {
+	LENGHT=${#REGISTROS[@]}
+	while read -r LINE
+	do
+		i=0
+		while (( i < "$LENGHT" ))
+		do
+			VALUE=`echo	"$LINE" | sed "s/^\([^$2]*\)$2.*/\1/"`
+			LINE=`echo "$LINE" | sed "s/^\([^$2]*\)$2\(.*\)/\2/"`
+			VALUES+=("$VALUE")
+			((i++))
+		done
+	done < "$1"
+}
+
 processFiles() {
 	CURRENT_DATE=`date +%F`
 	if ! directoryExists "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
@@ -88,17 +119,30 @@ processFiles() {
 		then
 			mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR"
 		else
-			COUNTRY_CODE=`echo $CHECKED_NAME | sed 's/\(.*\)-.*-.*-.*/\1/'`
-			SYSTEM_CODE=`echo $CHECKED_NAME | sed 's/.*-\(.*\)-.*-.*/\1/'`
+			COUNTRY_CODE=`echo "$CHECKED_NAME" | sed 's/\(.*\)-.*-.*-.*/\1/'`
+			SYSTEM_CODE=`echo "$CHECKED_NAME" | sed 's/.*-\(.*\)-.*-.*/\1/'`
 			SEPARATORS=`grep "^$COUNTRY_CODE-$SYSTEM_CODE-.*-.*$" "$T1_FILE"`
-			if [ -z $SEPARATORS ]
+			if [ -z "$SEPARATORS" ]
 			then
 				showError "No se encontro en $T1_FILE los separadores para $COUNTRY_CODE - $SYSTEM_CODE"
 			else
-				FIELD_SEPARATOR=`echo $SEPARATORS | sed 's/^.*-.*-\(.*\)-.*$/\1/'`
-				DECIMAL_SEPARATOR=`echo $SEPARATORS | sed 's/^.*-.*-.*-\(.*\)$/\1/'` 
+				FIELD_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-\(.*\)-.*$/\1/'`
+				DECIMAL_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-.*-\(.*\)$/\1/'` 
+				ROWS=()
+				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"
+				VALUES=()
+				buildValues
+			fi
 
 
+			i=0
+			while (( i < "${#ROWS[@]}" ))
+			do
+				echo "Campo: ${ROWS[i]}"
+				echo "Valor: ${VALUES[i]}"
+				echo ""
+				((i++))
+			done
 	done
 }
 
