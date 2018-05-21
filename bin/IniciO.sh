@@ -9,7 +9,7 @@ LOGFILE="$GRUPO/$LOGDIR/inicio.log"
 DETECTO="DetectO.sh"
 
 ############# 1 VERIFICAR ARCHIVO CONFIGURACION #############
-verificarArchivoConfiguracion(){
+configFileVerification(){
 	if ! verifyConfigFile
 	then
 		showError "No se puede continuar ya que no se encontro el archivo de configuracion."
@@ -17,8 +17,8 @@ verificarArchivoConfiguracion(){
 	fi	
 }
 
-############# 2 VERIFICAR INICIALIZACION #############
-verificarInicializacion(){
+############# 2 REALIZAR TODAS LAS VERIFICACIONES #############
+performVerifications(){
 
 	# corrobora que esten todas las carpetas del sistema dentro del config
 	if ! verifyFoldersConfig
@@ -54,34 +54,11 @@ verificarInicializacion(){
 }
 
 
-############# 2.1 VERIFICACION COMANDOS #############
-# verifyComandos(){
-
-# 	COMANDOS=("detectO.sh" "interpretO.sh" "reportO.sh" "stopO.sh")
-# 	showInfo "Corroborando que todas los comandos existan..."
-# 	COUNT=0
-# 	for COMANDO in ${COMANDOS[@]}
-# 		do
-# 			if [ ! -f "$COMANDO" ]
-# 			then
-# 				showError "El comando $COMANDO no existe"
-# 				showInfo ""
-# 				exit 1
-# 			fi
-# 		done
-# 	showInfo "Se encontraron todos los comandos"
-# 	showInfo ""
-
-# 	echo "verify comandos ok"
-# }
-
-
 ############# 2.2 PERMISO A DETECTO #############
 permissionToDetecto(){
 	chmod +x "$GRUPO/$BINDIR/$DETECTO"
 
 	showInfo "Se otorgo permiso de ejecucion a $DETECTO"
-
 }
 
 ############# 3 VERIFICACION DE PERMISOS DE LECTURA/EJECUCION #############
@@ -158,10 +135,10 @@ showAlert(){
 
 main(){
 	#1
-	verificarArchivoConfiguracion
+	configFileVerification
 	
 	#2
-	if ! verificarInicializacion
+	if ! performVerifications
 	then
 		showError "El sistema contiene errores en sus configuración"
 		showError "Ejecute la opción -r para reparar el sistema"
@@ -178,17 +155,8 @@ main(){
 	
 	#6
 	executeDemonio
+
+	showInfo "¡Proceso de inicializacion finalizado!" true
 }
 
 main $@
-
-# el sistema nunca fue inicializado
-#	verificar existencia del config, existencia de todos los directorios en el config y verificar las carpetas
-#	verificar existencia: comandos(detecto, stopO, interpretO, reportO), archivos (maestros, dirconf/install.conf)
-#	verificar los permisos, corregir e informar cuales fueron modificados y cuales no
-#	setear variables de ambientes necesarias en el demonio (borrarlas en el stopO) -> export o declare -x
-#	correr domonio (grep detecto devuelve la linea con PID)
-		#si corre, logueo process id
-		#sino, inicializar demonio, mostrar y loguear pid
-
-# Crear stopO: consulta si existe demonio corriendo, si existe darle kill -9 PID, loguear y mostrar por pantalla
