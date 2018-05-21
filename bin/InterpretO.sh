@@ -30,6 +30,7 @@ PRODUCT="InterpretO"
 LOGFILE="$GRUPO/$LOGDIR/interpreto.log"
 T1_FILE="$GRUPO/$MASTERDIR/T1.tab"
 T2_FILE="$GRUPO/$MASTERDIR/T2.tab"
+P_S_FILE="$GRUPO/$MASTERDIR/p-s.mae"
 INFOLOG="INF"
 ALERTLOG="ALE"
 ERRORLOG="ERR"
@@ -95,6 +96,7 @@ buildValues() {
 	LENGHT=${#ROWS[@]}
 	while read -r LINE
 	do
+		LINE=${LINE::-1}
 		i=0
 		while (( i < "$LENGHT" ))
 		do
@@ -104,6 +106,176 @@ buildValues() {
 			((i++))
 		done
 	done < "$1"
+}
+
+# $1 - el formateo de fecha
+# $2 - el valor a leer
+# $3 - variable CTB_DIA
+# $4 - variable CTB_MES
+# $5 - variable CTB_ANIO
+getDate() {
+	LONG=`echo "$1" | sed "s/^......\(.*\)$/\1/"`
+	LONG="${LONG::-2}" # SACO ESE PUNTO FEO
+	if (( "$LONG" == 8 )) # No tiene separador
+		then
+		DAY=`echo "$1" | grep "^dd.*$"`
+		if [ -n "$DAY" ]
+			then
+			DAY=`echo "$2" | sed "s/^\(..\).*$/\1/"`
+			eval "$3=$DAY"
+			MONTH=`echo "$2" | sed "s/^..\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			YEAR=`echo "$2" | sed "s/^....\(.*\)$/\1/"`
+			eval "$5=${YEAR}"
+			return
+		else
+			YEAR=`echo "$2" | sed "s/^\(....\).*$/\1/"`
+			eval "$5=$YEAR"
+			MONTH=`echo "$2" | sed "s/^....\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			DAY=`echo "$2" | sed "s/^......\(.*\)$/\1/"`
+			eval "$3=${DAY}"
+			return
+		fi
+	else
+		DAY=`echo "$1" | grep "^dd.*$"` # EN LA REGEX AGREGO UN CARACTER MAS POR EL SEPARADOR
+		if [ -n "$DAY" ]
+			then
+			DAY=`echo "$2" | sed "s/^\(..\).*$/\1/"`
+			eval "$3=$DAY"
+			MONTH=`echo "$2" | sed "s/^...\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			YEAR=`echo "$2" | sed "s/^......\(.*\)$/\1/"`
+			eval "$5=${YEAR}"
+			return
+		else
+			YEAR=`echo "$2" | sed "s/^\(....\).*$/\1/"`
+			eval "$5=$YEAR"
+			MONTH=`echo "$2" | sed "s/^.....\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			DAY=`echo "$2" | sed "s/^........\(.*\)$/\1/"`
+			eval "$3=${DAY}"
+			return
+		fi
+	fi
+}
+
+# $1 - el formateo de campo
+# $2 - el separador de coma
+# $3 - valor a leer
+# $4 - valor a asignar
+getNum () {
+	if [ -z "$3" ]
+		then
+		eval "$4=0"
+		return
+	fi
+	INT_LONG=`echo "$1" | sed "s/^commax\([^.]*\).*$/\1/"` # Como lo uso?
+	DECIMAL_LONG=`echo "$1" | sed "s/^\([^.]*\)\.\(.*\)$/\2/1"` # Como lo uso?
+	INT_VALUE=`echo "$3" | sed "s/^\([^$2]*\).*$/\1/"`
+	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\)$2\(.*\)$/\2/"`
+	NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
+	eval "$4=$NEW_VALUE"
+}
+
+# $1 : Valor
+# $2 : Variable a asignar
+getAlphaNum() {
+	if [ -z "$1" ]
+		then
+		eval "$2=''"
+	else
+		eval "$2='$1'"
+	fi
+}
+
+
+# $1: nombre del campo que busca obtenerse
+# $2: separador de decimales
+# $3..$n : variables a asignar
+getValue() {
+	ELEMENT_INDEX=0
+	for i in "${ROWS[@]}"
+	do
+		FIELD_NAME=`echo "$i" | grep "^$1-"`
+		if [ -z "$FIELD_NAME" ]
+			then
+			sleep 0
+		else
+			FIELD_TYPE=`echo "$i" | sed "s/^.*-\(.*\)$/\1/"`
+			DATE_FIELD=`echo "$FIELD_TYPE" | grep "yy"`
+			if [ -n "$DATE_FIELD" ]
+				then
+				FIELD_TYPE=`echo "$i" | sed "s/^$1-\(.*\)$/\1/"`
+				getDate "$FIELD_TYPE" "${VALUES[ELEMENT_INDEX]}" $3 $4 $5
+				break
+			fi
+			ALPH_NUM_FIELD=`echo "$FIELD_TYPE" | grep -F "$"`
+			if [ -n "$ALPH_NUM_FIELD" ]
+				then
+				getAlphaNum "${VALUES[ELEMENT_INDEX]}" $3  
+				break
+			fi
+			NUM_FIELD=`echo "$FIELD_TYPE" | grep "commax"`
+			if [ -n "$NUM_FIELD" ]
+				then
+				getNum "$FIELD_TYPE" "$DECIMAL_SEPARATOR" "${VALUES[ELEMENT_INDEX]}" $3
+				break
+			fi
+		fi
+		((ELEMENT_INDEX++))
+	done
+}
+
+# $1 : Codigo pais
+# $2 : Codigo Sistema
+# $3 : Separador de decimales
+# $4 : Output variable
+buildOutput() {
+	SIS_ID="$2"
+	CTB_ANIO=""
+	CTB_MES=""
+	CTB_DIA=""
+	CTB_ESTADO=""
+	PRES_ID=""
+	MT_PRES=""
+	MT_IMP=""
+	MT_INDE=""
+	MT_INNODE=""
+	MT_DEB=""
+	MT_REST=""
+	PRES_CLI=""
+	PRES_CLI_ID=""
+	CURRENT_DATE=""
+	CURRENT_USER=""
+	getValue "CTB_FE" "$3" CTB_DIA CTB_MES CTB_ANIO
+	getValue "CTB_ESTADO" "$3" CTB_ESTADO
+	getValue "PRES_ID" "$3" PRES_ID
+	getValue "PRES_CLI" "$3" PRES_CLI
+	getValue "PRES_CLI_ID" "$3" PRES_CLI_ID
+	getValue "MT_PRES" "$3" MT_PRES
+	getValue "MT_IMPAGO" "$3" MT_IMP
+	getValue "MT_INDE" "$3" MT_INDE
+	getValue "MT_INNODE" "$3" MT_INNODE
+	getValue "MT_DEB" "$3" MT_DEB
+	# array=('$MT_PRES' '$MT_IMP' '$MT_INDE' '$MT_INNODE')
+	# calculateRest $array "$MT_DEB" MT_REST
+	echo "CTB ANIO = $CTB_ANIO"
+	echo "CTB MES = $CTB_MES"
+	echo "CTB DIA = $CTB_DIA"
+	echo "CTB ESTADO = $CTB_ESTADO"
+	echo "PRES_ID = $PRES_ID"
+	echo "PRES_CLI = $PRES_CLI"
+	echo "PRES_CLI_ID = $PRES_CLI_ID"
+	echo "MT_PRES = $MT_PRES"
+	echo "MT_IMP = $MT_IMP"
+	echo "MT_INDE = $MT_INDE"
+	echo "MT_INNODE = $MT_INNODE"
+	echo "MT_DEB = $MT_DEB"
+	echo "MT_REST = $MT_REST"
+	# OUT_VALUE="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
+	# eval "$4='$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER'"
+	OUTPUT="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
 }
 
 processFiles() {
@@ -141,13 +313,32 @@ processFiles() {
 				DECIMAL_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-.*-\(.*\)$/\1/'` 
 				# Con el codigo pais y el codigo sistema, armo el header de T2 (es decir, que campos voy a leer y de que tipo son)
 				ROWS=()
-				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"
+				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"	
 				# Con los separadores, leo los valores del archivo. Quedna mapeados en el mismo index
 				VALUES=()
 				buildValues "$FILE_PATH" "$FIELD_SEPARATOR"
-				# LA IDEA SERIA LLAMAR AL METODO QUE FORMATEA EL REGISTRO DE SALIDA Y ESCRIBIRLO EN EL ARCHIVO QUE DICE EL ENUNCIADO
-				# EN PRUEBA.SH HAY UNOS INTENTOS QUE ESTUVE HACIENDO, EL METODO OUTPUT REGISTER
-				# DEBERIA MAPEAR EN CADA VARIABLE QUE NECESITA SER ESCRITA, SU VALOR. TENIENDO EN CUENTA EL TIPO DE DATO
+				OUTPUT=""
+				buildOutput "$COUNTRY_CODE" "$SYSTEM_CODE" "$DECIMAL_SEPARATOR"
+				echo "OUTPUT LINE : $OUTPUT"
+				if [ -n "$OUTPUT" ]
+					then
+					CURRENT_DATE=`date +%F`
+					# Lo muevo a procesados
+					mvOrFail "$FILE_PATH" "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/" false
+					# Extraigo el nombre del pais para el archivo de output
+					COUNTRY_NAME=`grep "^$COUNTRY_CODE-.*-$SYSTEM_CODE-.*$" "$P_S_FILE" | sed "s|^$COUNTRY_CODE-\([^-]*\)-.*$|\1|"`
+					OUTPUT_FILENAME="PRESTAMOS.$COUNTRY_NAME"
+					echo "OUTPUT OUTPUT_FILENAME : $OUTPUT_FILENAME"
+					echo "Y LO ESCRIBO EN $GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
+					if checkIfProcessed "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
+						then
+						echo "$OUTPUT_FILENAME EXISTENTE. HACIENDO APPEND"
+						echo "$OUTPUT" >> "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
+					else
+						echo "$OUTPUT_FILENAME NO EXISTE. HACIENDO INSERT"
+						echo "$OUTPUT" > "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
+					fi
+				fi
 			fi
 		fi
 	done
