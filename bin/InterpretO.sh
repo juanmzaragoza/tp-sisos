@@ -127,7 +127,7 @@ processFiles() {
 		# Habiendo limpiado el nombre (A-6-2017-05 , por ejemplo, me fijo si ya lo procese en este dia)
 		if checkIfProcessed "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$CHECKED_NAME"
 		then
-			mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR"
+			mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR" false
 		else
 			# Con el codigo pais y el codigo de sistema, voy a T1 a buscar los separadores de ese sistema
 			COUNTRY_CODE=`echo "$CHECKED_NAME" | sed 's/\(.*\)-.*-.*-.*/\1/'`

@@ -175,10 +175,10 @@ verifyTextFile(){
 manageFile(){
 	if [ "$2" = 0 ]
 	then
-		mvOrFail "$1" "$GRUPO/$ACCEPTEDDIR"
+		mvOrFail "$1" "$GRUPO/$ACCEPTEDDIR" false
 		showInfo "Novedad $1 Aceptada" false
 	else
-		mvOrFail "$1" "$GRUPO/$REJECTEDDIR"
+		mvOrFail "$1" "$GRUPO/$REJECTEDDIR" false
 	fi
 }
 
