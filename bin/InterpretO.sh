@@ -86,13 +86,14 @@ buildHeader() {
 # $2 : Separador de campos
 # Hay que definir antes de llamar al array VALUES
 buildValues() {
-	LENGHT=${#REGISTROS[@]}
+	LENGHT=${#ROWS[@]}
 	while read -r LINE
 	do
+		# LOCAL_LINE="${LINE::-1}"
 		i=0
 		while (( i < "$LENGHT" ))
 		do
-			VALUE=`echo	"$LINE" | sed "s/^\([^$2]*\)$2.*/\1/"`
+			VALUE=`echo	"$LINE" | sed "s/^\([^$2]*\)"$2".*/\1/"`
 			LINE=`echo "$LINE" | sed "s/^\([^$2]*\)$2\(.*\)/\2/"`
 			VALUES+=("$VALUE")
 			((i++))
@@ -108,12 +109,9 @@ processFiles() {
 		mkdir "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
 	fi
 	for FILE_PATH in "${1}/"*; do
-		
-		y=${1%.*}
+		y=${FILE_PATH%.*}
 		CLEANED_NAME=`echo ${y##*/}`
-		echo "CLEANED_NAMEis $CLEANED_NAME"
 		CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-.*$'`
-		echo "CHECKED_NAME is $CHECKED_NAME"
 		if [ -z "$CHECKED_NAME" ]
 		then
 			showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
@@ -135,18 +133,8 @@ processFiles() {
 				ROWS=()
 				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"
 				VALUES=()
-				buildValues
+				buildValues "$FILE_PATH" "$FIELD_SEPARATOR"
 			fi
-
-
-			i=0
-			while (( i < "${#ROWS[@]}" ))
-			do
-				echo "Campo: ${ROWS[i]}"
-				echo "Valor: ${VALUES[i]}"
-				echo ""
-				((i++))
-			done
 		fi
 	done
 }
@@ -161,9 +149,7 @@ main() {
 	then
 		showAlert "$GRUPO/$ACCEPTEDDIR has no files"
 	else
-		echo "ARRANCA PROCES para $GRUPO/$ACCEPTEDDIR"
 		processFiles "$GRUPO/$ACCEPTEDDIR"
-		echo "FINALIZA PROCES"
 	fi
 }
 
