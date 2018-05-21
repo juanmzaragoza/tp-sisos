@@ -3,11 +3,11 @@
 # A-6-MT_IMPAGO-1-commax16.2
 prueba() {
 	ARCHIVO="../mae/T2.tab"
-	LISTA=`grep "A-6-.*$" "$ARCHIVO"`
+	LISTA=`grep "C-7-.*$" "$ARCHIVO"`
 	while read -r linea
 	do
-		FIELD_NAME=`echo "$linea" | sed "s/^A-6-\(.*\)-.*-.*$/\1/"`
-		FIELD_TYPE=`echo "$linea" | sed "s/^A-6-.*-.*-\(.*\)$/\1/"`
+		FIELD_NAME=`echo "$linea" | sed "s/^C-7-\(.*\)-.*-.*$/\1/"`
+		FIELD_TYPE=`echo "$linea" | sed "s/^C-7-.*-.*-\(.*\)$/\1/"`
 		REGISTROS+=("$FIELD_NAME"-"$FIELD_TYPE")
 	done <<< "$LISTA"
 	# echo "${REGISTROS[2]}"
@@ -15,8 +15,8 @@ prueba() {
 }
 
 prueba2() {
-	COUNTRY_CODE="A"
-	SYSTEM_CODE="6"		
+	COUNTRY_CODE="C"
+	SYSTEM_CODE="7"		
 	SEPARATORS=`grep "^$COUNTRY_CODE-$SYSTEM_CODE-.*-.*$" "../mae/T1.tab"`
 	if [ -z $SEPARATORS ]
 	then
@@ -25,11 +25,12 @@ prueba2() {
 		FIELD_SEPARATOR=`echo $SEPARATORS | sed 's/^.*-.*-\(.*\)-.*$/\1/'`
 		DECIMAL_SEPARATOR=`echo $SEPARATORS | sed 's/^.*-.*-.*-\(.*\)$/\1/'` 
 	fi
-	ARCHIVO="../data/A-6-2017-05"
+	ARCHIVO="../data/C-7-2017-04"
 	LENGHT=${#REGISTROS[@]}
 	while read -r linea
 	do
 		i=0
+		linea=${linea::-1}
 		while (( i < "$LENGHT" ))
 		do
 			VALUE=`echo	"$linea" | sed "s/^\([^$FIELD_SEPARATOR]*\)$FIELD_SEPARATOR.*/\1/"`
@@ -59,6 +60,89 @@ extractValues() {
 	CTB_ANIO=""
 }
 
+# $1 - el formateo de campo
+# $2 - el separador de coma
+# $3 - valor a leer
+# $4 - valor a asignar
+getNum () {
+	if [ -z "$3" ]
+		then
+		eval "$4=0"
+		return
+	fi
+	INT_LONG=`echo "$1" | sed "s/^commax\([^.]*\).*$/\1/"` # Como lo uso?
+	DECIMAL_LONG=`echo "$1" | sed "s/^\([^.]*\)\.\(.*\)$/\2/1"` # Como lo uso?
+	INT_VALUE=`echo "$3" | sed "s/^\([^$2]*\).*$/\1/"`
+	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\)$2\(.*\)$/\2/"`
+	echo "INT VALUE $INT_VALUE"
+	echo "DECIMAL VALUE $DECIMAL_VALUE"
+	echo ""
+	NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
+	eval "$4=$NEW_VALUE"
+}
+
+
+# $1 - el formateo de fecha
+# $2 - el valor a leer
+# $3 - variable CTB_DIA
+# $4 - variable CTB_MES
+# $5 - variable CTB_ANIO
+getDate() {
+	LONG=`echo "$1" | sed "s/^......\(.*\)$/\1/"`
+	LONG="${LONG::-2}" # SACO ESE PUNTO FEO
+	if (( "$LONG" == 8 )) # No tiene separador
+		then
+		DAY=`echo "$1" | grep "^dd.*$"`
+		if [ -n "$DAY" ]
+			then
+			DAY=`echo "$2" | sed "s/^\(..\).*$/\1/"`
+			eval "$3=$DAY"
+			MONTH=`echo "$2" | sed "s/^..\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			YEAR=`echo "$2" | sed "s/^....\(.*\)$/\1/"`
+			eval "$5=${YEAR}"
+			return
+		else
+			YEAR=`echo "$2" | sed "s/^\(....\).*$/\1/"`
+			eval "$5=$YEAR"
+			MONTH=`echo "$2" | sed "s/^....\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			DAY=`echo "$2" | sed "s/^......\(.*\)$/\1/"`
+			eval "$3=${DAY}"
+			return
+		fi
+	else
+		DAY=`echo "$1" | grep "^dd.*$"` # EN LA REGEX AGREGO UN CARACTER MAS POR EL SEPARADOR
+		if [ -n "$DAY" ]
+			then
+			DAY=`echo "$2" | sed "s/^\(..\).*$/\1/"`
+			eval "$3=$DAY"
+			MONTH=`echo "$2" | sed "s/^...\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			YEAR=`echo "$2" | sed "s/^......\(.*\)$/\1/"`
+			eval "$5=${YEAR}"
+			return
+		else
+			YEAR=`echo "$2" | sed "s/^\(....\).*$/\1/"`
+			eval "$5=$YEAR"
+			MONTH=`echo "$2" | sed "s/^.....\(..\).*$/\1/"`
+			eval "$4=$MONTH"
+			DAY=`echo "$2" | sed "s/^........\(.*\)$/\1/"`
+			eval "$3=${DAY}"
+			return
+		fi
+	fi
+}
+
+getAlphaNum() {
+	if [ -z "$1" ]
+		then
+		eval "$2=''"
+	else
+		eval "$2='$1'"
+	fi
+}
+
 getValue() {
 	# en $1 me viene el campo que se busca
 	ELEMENT_INDEX=0
@@ -67,12 +151,37 @@ getValue() {
 		FIELD_NAME=`echo "$i" | grep "^$1-"`
 		if [ -z "$FIELD_NAME" ]
 			then
-			echo "NOT FOUND!"
+			sleep 0
 		else
-			eval "$2=${VALORES[ELEMENT_INDEX]}"
-			break
+			FIELD_TYPE=`echo "$i" | sed "s/^.*-\(.*\)$/\1/"`
+			DATE_FIELD=`echo "$FIELD_TYPE" | grep "yy"`
+			if [ -n "$DATE_FIELD" ]
+				then
+				FIELD_TYPE=`echo "$i" | sed "s/^$1-\(.*\)$/\1/"`
+				getDate "$FIELD_TYPE" "${VALORES[ELEMENT_INDEX]}" $2 $3 $4
+				break
+			fi
+			ALPH_NUM_FIELD=`echo "$FIELD_TYPE" | grep -F "$"`
+			if [ -n "$ALPH_NUM_FIELD" ]
+				then
+				getAlphaNum "${VALORES[ELEMENT_INDEX]}" $2  
+				break
+			fi
+			NUM_FIELD=`echo "$FIELD_TYPE" | grep "commax"`
+			if [ -n "$NUM_FIELD" ]
+				then
+				getNum "$FIELD_TYPE" "." "${VALORES[ELEMENT_INDEX]}" $2
+				break
+			fi
 		fi
 		((ELEMENT_INDEX++))
+	done
+}
+
+calculateRest() {
+	for i in "${1[@]}"
+	do
+		echo "i is $i"
 	done
 }
 
@@ -105,25 +214,38 @@ outputRegister() {
 	MT_INNODE=""
 	MT_DEB=""
 	MT_REST=""
-	PRES_CLI_ID=""
 	PRES_CLI=""
+	PRES_CLI_ID=""
 	CURRENT_DATE=""
 	CURRENT_USER=""
+	getValue "CTB_FE" CTB_DIA CTB_MES CTB_ANIO
 	getValue "CTB_ESTADO" CTB_ESTADO
 	getValue "PRES_ID" PRES_ID
+	getValue "PRES_CLI" PRES_CLI
+	getValue "PRES_CLI_ID" PRES_CLI_ID
 	getValue "MT_PRES" MT_PRES
-	getValue "MT_IMP" MT_IMP
+	getValue "MT_IMPAGO" MT_IMP
 	getValue "MT_INDE" MT_INDE
 	getValue "MT_INNODE" MT_INNODE
 	getValue "MT_DEB" MT_DEB
-	# getValue "MT_REST" MT_REST
+	array=('$MT_PRES' '$MT_IMP' '$MT_INDE' '$MT_INNODE')
+	calculateRest $array "$MT_DEB" MT_REST
+	echo "CTB ANIO = $CTB_ANIO"
+	echo "CTB MES = $CTB_MES"
+	echo "CTB DIA = $CTB_DIA"
 	echo "CTB ESTADO = $CTB_ESTADO"
 	echo "PRES_ID = $PRES_ID"
+	echo "PRES_CLI = $PRES_CLI"
+	echo "PRES_CLI_ID = $PRES_CLI_ID"
 	echo "MT_PRES = $MT_PRES"
 	echo "MT_IMP = $MT_IMP"
 	echo "MT_INDE = $MT_INDE"
 	echo "MT_INNODE = $MT_INNODE"
 	echo "MT_DEB = $MT_DEB"
+	echo "MT_REST = $MT_REST"
+	OUT_VALUE="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
+	echo "OUTPUT VALUE :"
+	echo "$OUT_VALUE"
 }
 
 REGISTROS=()
