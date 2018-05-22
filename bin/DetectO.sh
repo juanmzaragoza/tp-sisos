@@ -101,7 +101,8 @@ rest(){
 verifyName(){
 	y=${1%.*}
 	CLEANED_NAME=`echo ${y##*/}`
-	CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-.*$'`
+	CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-[0-9][0-9]$'`
+	echo "nombre $CHECKED_NAME"
 	if [ -z "$CHECKED_NAME" ]
 	then
 		showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
@@ -130,13 +131,14 @@ verifyName(){
 	fi
 	CURRENT_YEAR=`date +%Y`
 	CURRENT_MONTH=`date +%m`
+
 	if (( $YEAR <= 2016 || $YEAR > $CURRENT_YEAR ))
 	then
 		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El año del período esta fuera del rango"
 		return 1
 	elif (( $YEAR != $CURRENT_YEAR )) ;	then
 		return 0
-	elif (( $YEAR == $CURRENT_YEAR && $MONTH > $CURRENT_MONTH )) ; then
+	elif [ $MONTH -gt $CURRENT_MONTH ] ; then
 		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El período es incorrecto"
 		return 1
 	else
