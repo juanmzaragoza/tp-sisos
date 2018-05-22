@@ -74,9 +74,6 @@ getNum () {
 	DECIMAL_LONG=`echo "$1" | sed "s/^\([^.]*\)\.\(.*\)$/\2/1"` # Como lo uso?
 	INT_VALUE=`echo "$3" | sed "s/^\([^$2]*\).*$/\1/"`
 	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\)$2\(.*\)$/\2/"`
-	echo "INT VALUE $INT_VALUE"
-	echo "DECIMAL VALUE $DECIMAL_VALUE"
-	echo ""
 	NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
 	eval "$4=$NEW_VALUE"
 }
@@ -179,10 +176,17 @@ getValue() {
 }
 
 calculateRest() {
-	for i in "${1[@]}"
+	ARRAY_AUX=("${array[@]}")
+	TOTAL=0
+	for i in "${ARRAY_AUX[@]}"
 	do
-		echo "i is $i"
+		echo "$i"
+		tmp=`echo "$i" | sed "s|\,|\.|"`
+		TOTAL=$(echo "$TOTAL+$tmp" | bc)
 	done
+	tmp=`echo "$1" | sed "s|\,|\.|"`
+	TOTAL=$(echo "$TOTAL-$tmp" | bc)
+	eval "$2='$TOTAL'"
 }
 
 # Codigo del sistema : SIS_ID 
@@ -228,28 +232,38 @@ outputRegister() {
 	getValue "MT_INDE" MT_INDE
 	getValue "MT_INNODE" MT_INNODE
 	getValue "MT_DEB" MT_DEB
-	array=('$MT_PRES' '$MT_IMP' '$MT_INDE' '$MT_INNODE')
-	calculateRest $array "$MT_DEB" MT_REST
-	echo "CTB ANIO = $CTB_ANIO"
-	echo "CTB MES = $CTB_MES"
-	echo "CTB DIA = $CTB_DIA"
-	echo "CTB ESTADO = $CTB_ESTADO"
-	echo "PRES_ID = $PRES_ID"
-	echo "PRES_CLI = $PRES_CLI"
-	echo "PRES_CLI_ID = $PRES_CLI_ID"
-	echo "MT_PRES = $MT_PRES"
-	echo "MT_IMP = $MT_IMP"
-	echo "MT_INDE = $MT_INDE"
-	echo "MT_INNODE = $MT_INNODE"
-	echo "MT_DEB = $MT_DEB"
-	echo "MT_REST = $MT_REST"
+	array=("$MT_PRES" "$MT_IMP" "$MT_INDE" "$MT_INNODE")
+	calculateRest "$MT_DEB" MT_REST
+	echo "MT REST $MT_REST"
+	# echo "CTB ANIO = $CTB_ANIO"
+	# echo "CTB MES = $CTB_MES"
+	# echo "CTB DIA = $CTB_DIA"
+	# echo "CTB ESTADO = $CTB_ESTADO"
+	# echo "PRES_ID = $PRES_ID"
+	# echo "PRES_CLI = $PRES_CLI"
+	# echo "PRES_CLI_ID = $PRES_CLI_ID"
+	# echo "MT_PRES = $MT_PRES"
+	# echo "MT_IMP = $MT_IMP"
+	# echo "MT_INDE = $MT_INDE"
+	# echo "MT_INNODE = $MT_INNODE"
+	# echo "MT_DEB = $MT_DEB"
+	# echo "MT_REST = $MT_REST"
 	OUT_VALUE="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
-	echo "OUTPUT VALUE :"
-	echo "$OUT_VALUE"
+	# echo "OUTPUT VALUE :"
+	# echo "$OUT_VALUE"
 }
 
-REGISTROS=()
-prueba 
-VALORES=()
-prueba2
-outputRegister
+readingTest() {
+	ARCHIVO="../data/C-7-2017-04"
+	while read -r linea
+	do
+		echo "line : $linea"
+	done < "$ARCHIVO"
+}
+
+# REGISTROS=()
+# prueba 
+# VALORES=()
+# prueba2
+# outputRegister
+readingTest

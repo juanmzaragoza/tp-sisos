@@ -91,21 +91,55 @@ buildHeader() {
 
 # $1 : Path al archivo con informacion del sistema (Ejemplo "A-6-2017-05")
 # $2 : Separador de campos extraido de T1
+# $3 : Nombre limpio del archivo
 # Hay que definir antes de llamar al array VALUES
 buildValues() {
 	LENGHT=${#ROWS[@]}
+	TOTAL_LINES=0
+	GOOD_LINES=0
+	BAD_LINES=0
+	READING_FILE="$1"
+	echo "" >> "$READING_FILE"
 	while read -r LINE
 	do
-		LINE=${LINE::-1}
-		i=0
-		while (( i < "$LENGHT" ))
-		do
-			VALUE=`echo	"$LINE" | sed "s/^\([^$2]*\)"$2".*/\1/"`
-			LINE=`echo "$LINE" | sed "s/^\([^$2]*\)$2\(.*\)/\2/"`
-			VALUES+=("$VALUE")
-			((i++))
-		done
-	done < "$1"
+		if [ -n "$LINE" ]
+		then
+			((TOTAL_LINES++))
+			LOCAL_LINE=${LINE::-1}
+			i=0
+			while (( i < "$LENGHT" ))
+			do
+				VALUE=`echo	"$LOCAL_LINE" | sed "s/^\([^$2]*\)"$2".*/\1/"`
+				LOCAL_LINE=`echo "$LOCAL_LINE" | sed "s/^\([^$2]*\)$2\(.*\)/\2/"`
+				VALUES+=("$VALUE")
+				((i++))
+			done
+			OUTPUT=""
+			buildOutput "$COUNTRY_CODE" "$SYSTEM_CODE" "$DECIMAL_SEPARATOR"
+			if [ -n "$OUTPUT" ]
+				then
+				(( GOOD_LINES++ ))
+				showInfo "Registro $TOTAL_LINES de novedad $CHECKED_NAME procesado correctamente" false
+				OUTPUT_FILENAME="PRESTAMOS.$COUNTRY_CODE"
+				if checkIfProcessed "$GRUPO/$PROCESSEDDIR/$OUTPUT_FILENAME"
+					then
+					echo "$OUTPUT" >> "$GRUPO/$PROCESSEDDIR/$OUTPUT_FILENAME"
+				else
+					echo "$OUTPUT" > "$GRUPO/$PROCESSEDDIR/$OUTPUT_FILENAME"
+				fi
+			else
+				(( BAD_LINES++ ))
+				showInfo "Registro $TOTAL_LINES de novedad $CHECKED_NAME procesado con error: No se pudo generar el output" false
+			fi
+		fi
+	done < "$READING_FILE"
+	showInfo "Novedad $3 proceso un total de $TOTAL_LINES lineas ($GOOD_LINES correctas y $BAD_LINES erroneas)" false
+	if (( $GOOD_LINES > 0 ))
+		then
+		mvOrFail "$1" "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/" false
+	else
+		mvOrFail "$1" "$GRUPO/$REJECTEDDIR" false
+	fi
 }
 
 # $1 - el formateo de fecha
@@ -173,7 +207,7 @@ getNum () {
 	INT_LONG=`echo "$1" | sed "s/^commax\([^.]*\).*$/\1/"` # Como lo uso?
 	DECIMAL_LONG=`echo "$1" | sed "s/^\([^.]*\)\.\(.*\)$/\2/1"` # Como lo uso?
 	INT_VALUE=`echo "$3" | sed "s/^\([^$2]*\).*$/\1/"`
-	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\)$2\(.*\)$/\2/"`
+	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\).\(.*\)$/\2/"`
 	NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
 	eval "$4=$NEW_VALUE"
 }
@@ -198,33 +232,45 @@ getValue() {
 	for i in "${ROWS[@]}"
 	do
 		FIELD_NAME=`echo "$i" | grep "^$1-"`
-		if [ -z "$FIELD_NAME" ]
-			then
-			sleep 0
-		else
+		if [ -n "$FIELD_NAME" ]
+		then
 			FIELD_TYPE=`echo "$i" | sed "s/^.*-\(.*\)$/\1/"`
 			DATE_FIELD=`echo "$FIELD_TYPE" | grep "yy"`
 			if [ -n "$DATE_FIELD" ]
-				then
+			then
 				FIELD_TYPE=`echo "$i" | sed "s/^$1-\(.*\)$/\1/"`
 				getDate "$FIELD_TYPE" "${VALUES[ELEMENT_INDEX]}" $3 $4 $5
 				break
 			fi
 			ALPH_NUM_FIELD=`echo "$FIELD_TYPE" | grep -F "$"`
 			if [ -n "$ALPH_NUM_FIELD" ]
-				then
+			then
 				getAlphaNum "${VALUES[ELEMENT_INDEX]}" $3  
 				break
 			fi
 			NUM_FIELD=`echo "$FIELD_TYPE" | grep "commax"`
 			if [ -n "$NUM_FIELD" ]
-				then
+			then
 				getNum "$FIELD_TYPE" "$DECIMAL_SEPARATOR" "${VALUES[ELEMENT_INDEX]}" $3
 				break
 			fi
+			((VALUE_ERRORS++))	
 		fi
 		((ELEMENT_INDEX++))
 	done
+}
+
+calculateRest() {
+	ARRAY_AUX=("${array[@]}")
+	TOTAL=0
+	for i in "${ARRAY_AUX[@]}"
+	do
+		tmp=`echo "$i" | sed "s|\,|\.|"` # Necesito pasar del estándar al separador "." para bc
+		TOTAL=$(echo "$TOTAL+$tmp" | bc)
+	done
+	tmp=`echo "$1" | sed "s|\,|\.|"`
+	TOTAL=$(echo "$TOTAL-$tmp" | bc)
+	eval "$2='$TOTAL'"
 }
 
 # $1 : Codigo pais
@@ -246,8 +292,9 @@ buildOutput() {
 	MT_REST=""
 	PRES_CLI=""
 	PRES_CLI_ID=""
-	CURRENT_DATE=""
-	CURRENT_USER=""
+	CURR_DATE=`date +%d/%m/%Y`
+	CURR_USER="$USER"
+	VALUE_ERRORS=0
 	getValue "CTB_FE" "$3" CTB_DIA CTB_MES CTB_ANIO
 	getValue "CTB_ESTADO" "$3" CTB_ESTADO
 	getValue "PRES_ID" "$3" PRES_ID
@@ -258,24 +305,14 @@ buildOutput() {
 	getValue "MT_INDE" "$3" MT_INDE
 	getValue "MT_INNODE" "$3" MT_INNODE
 	getValue "MT_DEB" "$3" MT_DEB
-	# array=('$MT_PRES' '$MT_IMP' '$MT_INDE' '$MT_INNODE')
-	# calculateRest $array "$MT_DEB" MT_REST
-	echo "CTB ANIO = $CTB_ANIO"
-	echo "CTB MES = $CTB_MES"
-	echo "CTB DIA = $CTB_DIA"
-	echo "CTB ESTADO = $CTB_ESTADO"
-	echo "PRES_ID = $PRES_ID"
-	echo "PRES_CLI = $PRES_CLI"
-	echo "PRES_CLI_ID = $PRES_CLI_ID"
-	echo "MT_PRES = $MT_PRES"
-	echo "MT_IMP = $MT_IMP"
-	echo "MT_INDE = $MT_INDE"
-	echo "MT_INNODE = $MT_INNODE"
-	echo "MT_DEB = $MT_DEB"
-	echo "MT_REST = $MT_REST"
-	# OUT_VALUE="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
-	# eval "$4='$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER'"
-	OUTPUT="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURRENT_DATE;$CURRENT_USER"
+	array=("$MT_PRES" "$MT_IMP" "$MT_INDE" "$MT_INNODE")
+	calculateRest "$MT_DEB" MT_REST
+	if (( $VALUE_ERRORS > 0 ))
+	then
+		OUTPUT=""
+	else
+		OUTPUT="$SIS_ID;$CTB_ANIO;$CTB_MES;$CTB_DIA;$CTB_ESTADO;$PRES_ID;$MT_PRES;$MT_IMP;$MT_INDE;$MT_INNODE;$MT_DEB;$MT_REST;$PRES_CLI_ID;$PRES_CLI;$CURR_DATE;$CURR_USER"
+	fi
 }
 
 processFiles() {
@@ -293,13 +330,14 @@ processFiles() {
 		CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-.*$'`
 		if [ -z "$CHECKED_NAME" ]
 		then
-			showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
+			showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron" false
 			return 1
 		fi
-		# Habiendo limpiado el nombre (A-6-2017-05 , por ejemplo, me fijo si ya lo procese en este dia)
+		# Habiendo limpiado el nombre (A-6-2017-05 , por ejemplo) me fijo si ya lo procese en este dia)
 		if checkIfProcessed "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$CHECKED_NAME"
 		then
 			mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR" false
+			showError "Novedad $CHECKED_NAME rechazada por encontrarse duplicada" false
 		else
 			# Con el codigo pais y el codigo de sistema, voy a T1 a buscar los separadores de ese sistema
 			COUNTRY_CODE=`echo "$CHECKED_NAME" | sed 's/\(.*\)-.*-.*-.*/\1/'`
@@ -307,38 +345,20 @@ processFiles() {
 			SEPARATORS=`grep "^$COUNTRY_CODE-$SYSTEM_CODE-.*-.*$" "$T1_FILE"`
 			if [ -z "$SEPARATORS" ]
 			then
-				showError "No se encontro en $T1_FILE los separadores para $COUNTRY_CODE - $SYSTEM_CODE"
+				showError "No se encontro en $T1_FILE los separadores para $COUNTRY_CODE - $SYSTEM_CODE" false
 			else
 				FIELD_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-\(.*\)-.*$/\1/'`
 				DECIMAL_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-.*-\(.*\)$/\1/'` 
 				# Con el codigo pais y el codigo sistema, armo el header de T2 (es decir, que campos voy a leer y de que tipo son)
 				ROWS=()
-				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"	
+				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"
+				if (( ${#ROWS[@]} == 0 ))
+					then
+					showError "Novedad $CHECKED_NAME no pudo interpretar bien el archivo $T1_FILE" false
+				fi
 				# Con los separadores, leo los valores del archivo. Quedna mapeados en el mismo index
 				VALUES=()
-				buildValues "$FILE_PATH" "$FIELD_SEPARATOR"
-				OUTPUT=""
-				buildOutput "$COUNTRY_CODE" "$SYSTEM_CODE" "$DECIMAL_SEPARATOR"
-				echo "OUTPUT LINE : $OUTPUT"
-				if [ -n "$OUTPUT" ]
-					then
-					CURRENT_DATE=`date +%F`
-					# Lo muevo a procesados
-					mvOrFail "$FILE_PATH" "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/" false
-					# Extraigo el nombre del pais para el archivo de output
-					COUNTRY_NAME=`grep "^$COUNTRY_CODE-.*-$SYSTEM_CODE-.*$" "$P_S_FILE" | sed "s|^$COUNTRY_CODE-\([^-]*\)-.*$|\1|"`
-					OUTPUT_FILENAME="PRESTAMOS.$COUNTRY_NAME"
-					echo "OUTPUT OUTPUT_FILENAME : $OUTPUT_FILENAME"
-					echo "Y LO ESCRIBO EN $GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
-					if checkIfProcessed "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
-						then
-						echo "$OUTPUT_FILENAME EXISTENTE. HACIENDO APPEND"
-						echo "$OUTPUT" >> "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
-					else
-						echo "$OUTPUT_FILENAME NO EXISTE. HACIENDO INSERT"
-						echo "$OUTPUT" > "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE/$OUTPUT_FILENAME"
-					fi
-				fi
+				buildValues "$FILE_PATH" "$FIELD_SEPARATOR" "$CHECKED_NAME"
 			fi
 		fi
 	done
@@ -347,12 +367,12 @@ processFiles() {
 main() {
 	if ! validateEnvironment
 	then
-		showError "Ambiente invalido"
+		showError "Ambiente invalido" false
 		return 1
 	fi
 	if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
 	then
-		showAlert "$GRUPO/$ACCEPTEDDIR has no files"
+		showAlert "$GRUPO/$ACCEPTEDDIR has no files" false
 	else
 		processFiles "$GRUPO/$ACCEPTEDDIR"
 	fi

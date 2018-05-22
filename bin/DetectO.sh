@@ -86,7 +86,6 @@ callInterpreter(){
 	else
 		showInfo "Invocacion del interprete pospuesta para el siguiente ciclo" false
 	fi
-	echo "INTERPRETE"
 }
 
 # Pone a dormir al demonio segun la configuracion de sleep
