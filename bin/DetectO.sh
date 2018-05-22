@@ -102,7 +102,6 @@ verifyName(){
 	y=${1%.*}
 	CLEANED_NAME=`echo ${y##*/}`
 	CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-[0-9][0-9]$'`
-	echo "nombre $CHECKED_NAME"
 	if [ -z "$CHECKED_NAME" ]
 	then
 		showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
