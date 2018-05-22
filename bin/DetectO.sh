@@ -72,21 +72,20 @@ validateEnvironment(){
 # Dispara en back-ground el interprete
 # Debe verificar antes que haya archivos aceptados, sino ni lo llama
 callInterpreter(){
-	# if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
-	# then
-	# 	showInfo "No hay archivos aceptados para interpretar"
-	# 	return
-	# fi
-	# PID=`pgrep -f "$CHILD_PRODUCT"`
-	# if [ -z "$PID" ];
-	# then
-	# 	bash "$GRUPO/$BINDIR/$CHILD_PRODUCT" &
-	# 	PID=$!
-	# 	showInfo "Interprete inicializado con id $PID"
-	# else
-	# 	showInfo "Invocacion del interprete pospuesta para el siguiente ciclo"
-	# fi
-	echo "INTERPRETE"
+	if directoryEmpty "$GRUPO/$ACCEPTEDDIR"
+	then
+		showInfo "No hay archivos aceptados para interpretar" false
+		return
+	fi
+	PID=`pgrep -f "$CHILD_PRODUCT"`
+	if [ -z "$PID" ];
+	then
+		bash "$GRUPO/$BINDIR/$CHILD_PRODUCT.sh" &
+		PID=$!
+		showInfo "Interprete inicializado con id $PID" false
+	else
+		showInfo "Invocacion del interprete pospuesta para el siguiente ciclo" false
+	fi
 }
 
 # Pone a dormir al demonio segun la configuracion de sleep
@@ -104,7 +103,7 @@ verifyName(){
 	CHECKED_NAME=`echo $CLEANED_NAME | grep '^.*-.*-.*-[0-9][0-9]$'`
 	if [ -z "$CHECKED_NAME" ]
 	then
-		showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron"
+		showError "Novedad $1 Rechazada. Motivo: El nombre no cumple el patron" false
 		return 1
 	fi
 	COUNTRY_CODE=`echo $CHECKED_NAME | sed 's/\(.*\)-.*-.*-.*/\1/'`
@@ -113,19 +112,19 @@ verifyName(){
 	RESULT=`grep "$COUNTRY_CODE-.*-$SYSTEM_CODE-.*" $MASTER`
 	if [ -z "$RESULT" ]
 	then
-		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El maestro no tiene registros con la combinacion $COUNTRY_CODE y $SYSTEM_CODE"
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El maestro no tiene registros con la combinacion $COUNTRY_CODE y $SYSTEM_CODE" false
 		return 1
 	fi
 	YEAR=`echo $CHECKED_NAME | sed 's/.*-.*-\(.*\)-.*/\1/' | grep "[0-9][0-9][0-9][0-9]"`
 	if [ -z $YEAR ]
 	then
-		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el año de la novedad"
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el año de la novedad" false
 		return 1
 	fi
 	MONTH=`echo $CHECKED_NAME | sed 's/.*-.*-.*-\(.*\)/\1/' | grep "[0-1][0-9]"`
 	if [ -z $MONTH ]
 	then
-		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el mes de la novedad"
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: Error obteniendo el mes de la novedad" false
 		return 1 
 	fi
 	CURRENT_YEAR=`date +%Y`
@@ -133,12 +132,12 @@ verifyName(){
 
 	if (( $YEAR <= 2016 || $YEAR > $CURRENT_YEAR ))
 	then
-		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El año del período esta fuera del rango"
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El año del período esta fuera del rango" false
 		return 1
 	elif (( $YEAR != $CURRENT_YEAR )) ;	then
 		return 0
-	elif [ $MONTH -gt $CURRENT_MONTH ] ; then
-		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El período es incorrecto"
+	elif (( $YEAR == $CURRENT_YEAR && $MONTH > $CURRENT_MONTH )) ; then
+		showError "Novedad $CHECKED_NAME Rechazada. Motivo: El período es incorrecto" false
 		return 1
 	else
 		return 0
@@ -152,7 +151,7 @@ verifyEmpty(){
 	then
 		return 0
 	else
-		showError "Novedad $1 Rechazada. Motivo: El archivo esta vacio"
+		showError "Novedad $1 Rechazada. Motivo: El archivo esta vacio" false
 		return 1
 	fi
 }
@@ -165,7 +164,7 @@ verifyTextFile(){
 	then
 		return 0
 	else
-		showError "Novedad $1 Rechazada. Motivo: El archivo no es de texto"
+		showError "Novedad $1 Rechazada. Motivo: El archivo no es de texto" false
 		return 1
 	fi
 }
@@ -176,10 +175,10 @@ verifyTextFile(){
 manageFile(){
 	if [ "$2" = 0 ]
 	then
-		mvOrFail "$1" "$GRUPO/$ACCEPTEDDIR"
-		showInfo "Novedad $1 Aceptada"
+		mvOrFail "$1" "$GRUPO/$ACCEPTEDDIR" false
+		showInfo "Novedad $1 Aceptada" false
 	else
-		mvOrFail "$1" "$GRUPO/$REJECTEDDIR"
+		mvOrFail "$1" "$GRUPO/$REJECTEDDIR" false
 	fi
 }
 
@@ -212,16 +211,16 @@ processFiles() {
 main() {
 	if ! validateEnvironment
 	then
-		showError "Ambiente invalido"
+		showError "Ambiente invalido" false
 		return 1
 	fi
 	while true
 	do			
 		CYCLE_COUNTER=$(( CYCLE_COUNTER + 1))
-		showInfo "Ciclo Numero $CYCLE_COUNTER" 
+		showInfo "Ciclo Numero $CYCLE_COUNTER" false
 		if directoryEmpty "$GRUPO/$ARRIVEDIR"
 		then
-			showAlert "$GRUPO/$ARRIVEDIR has no files"
+			showAlert "$GRUPO/$ARRIVEDIR has no files" false
 		else
 			processFiles "$GRUPO/$ARRIVEDIR"
 		fi
