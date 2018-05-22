@@ -61,11 +61,11 @@ showAlert(){
 
 # 1 = false 0 = true
 validateEnvironment(){
-	# if ! verifyConfigFile
-	# then
-	# 	showError "No se puede continuar ya que no se encontro el archivo de configuracion."
-	# 	exit 1
-	# fi	
+	# bash $GRUPO/$LIBDIR/inicializado?.sh
+	# if (( $? == 1 ))
+	# 	then
+	# 	return 1
+	# fi
 	return 0
 }
 

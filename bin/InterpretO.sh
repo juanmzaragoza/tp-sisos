@@ -60,6 +60,11 @@ showAlert(){
 # Deberia llamar a la funcion de ivan para validar ambiente
 # Devolver 0 (true) o 1 (false)
 validateEnvironment() {
+	# bash $GRUPO/$LIBDIR/inicializado?.sh
+	# if (( $? == 1 ))
+	# 	then
+	# 	return 1
+	# fi
 	return 0
 }
 
@@ -98,7 +103,7 @@ buildValues() {
 	GOOD_LINES=0
 	BAD_LINES=0
 	READING_FILE="$1"
-	echo "" >> "$READING_FILE"
+	echo "." >> "$READING_FILE"
 	while read -r LINE
 	do
 		if [ -n "$LINE" ]
@@ -320,7 +325,7 @@ processFiles() {
 	# Checkeo o creo en la carpeta procesados, la sub-carpeta referida a los procesados en el dia current
 	if ! directoryExists "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
 	then
-		chmod +w "$GRUPO/$PROCESSEDDIR"
+		chmod +wr "$GRUPO/$PROCESSEDDIR"
 		mkdir "$GRUPO/$PROCESSEDDIR/$CURRENT_DATE"
 	fi
 	# Recorro todos los archivos aceptados, listos para procesar
@@ -345,6 +350,7 @@ processFiles() {
 			SEPARATORS=`grep "^$COUNTRY_CODE-$SYSTEM_CODE-.*-.*$" "$T1_FILE"`
 			if [ -z "$SEPARATORS" ]
 			then
+				mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR" false
 				showError "No se encontro en $T1_FILE los separadores para $COUNTRY_CODE - $SYSTEM_CODE" false
 			else
 				FIELD_SEPARATOR=`echo "$SEPARATORS" | sed 's/^.*-.*-\(.*\)-.*$/\1/'`
@@ -354,7 +360,8 @@ processFiles() {
 				buildHeader "$COUNTRY_CODE" "$SYSTEM_CODE"
 				if (( ${#ROWS[@]} == 0 ))
 					then
-					showError "Novedad $CHECKED_NAME no pudo interpretar bien el archivo $T1_FILE" false
+					mvOrFail "$FILE_PATH" "$GRUPO/$REJECTEDDIR" false
+					showError "Novedad $CHECKED_NAME no pudo interpretar bien el archivo $T2_FILE" false
 				fi
 				# Con los separadores, leo los valores del archivo. Quedna mapeados en el mismo index
 				buildValues "$FILE_PATH" "$FIELD_SEPARATOR" "$CHECKED_NAME"
