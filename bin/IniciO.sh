@@ -5,8 +5,13 @@ source "lib/logger.sh"
 source "lib/requirement.sh"
 
 COMANDOACTUAL="IniciO"
-LOGFILE="$GRUPO/$LOGDIR/inicio.log"
+#LOGFILE="$logs/inicio.log"
 DETECTO="DetectO.sh"
+
+findLogFile(){
+	DIRLOG=`grep "^logs-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^logs-\(.*\)-[^-]*-[^-]*$+\1+"`
+	LOGFILE="$DIRLOG/inicio.log"
+}
 
 ############# 1 VERIFICAR ARCHIVO CONFIGURACION #############
 configFileVerification(){
@@ -88,17 +93,34 @@ checkFilesPermission(){
 
 ############# 4 DECLARACION DE VARIABLES DE AMBIENTE #############
 declareVariables(){
+
+	BINDIR=`grep "^ejecutables-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^ejecutables-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export BINDIR # directorio de ejecutables
+
+	MASTERDIR=`grep "^maestros-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^maestros-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export MASTERDIR # directorio de archivos maestros y tablas del sistema
+	
+	ARRIVEDIR=`grep "^arribos-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^arribos-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export ARRIVEDIR # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
+	
+	ACCEPTEDDIR=`grep "^aceptados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^aceptados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export ACCEPTEDDIR # directorio donde se depositan temporalmente las novedades aceptadas
+	
+	REJECTEDDIR=`grep "^rechazados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^rechazados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export REJECTEDDIR # directorio donde se depositan todos los archivos rechazados
+	
+	PROCESSEDDIR=`grep "^procesados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^procesados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
+	
+	REPORTDIR=`grep "^reportes-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^reportes-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export REPORTDIR # Directorio donde se depositan los reportes
+
+	LOGDIR=`grep "^logs-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^logs-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export LOGDIR # directorio donde se depositan los logs de los comandos	
+
 	export GRUPO # directorio de instalacion
 	export CONFIGDIR # directorio del archivo de configuracion
 	export LIBDIR # directorio donde se depositan las librerias
-	export BINDIR # directorio de ejecutables
-	export MASTERDIR # directorio de archivos maestros y tablas del sistema
-	export ARRIVEDIR # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
-	export ACCEPTEDDIR # directorio donde se depositan temporalmente las novedades aceptadas
-	export REJECTEDDIR # directorio donde se depositan todos los archivos rechazados
-	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
-	export REPORTDIR # Directorio donde se depositan los reportes
-	export LOGDIR # directorio donde se depositan los logs de los comandos
 	export DETECTOSLEEP # tiempo que duerme DetectO.sh
 }
 
@@ -135,8 +157,12 @@ showAlert(){
 
 main(){
 	#1
+	findLogFile
 	configFileVerification
 	
+	#5
+	declareVariables
+
 	#2
 	if ! performVerifications
 	then
@@ -149,10 +175,7 @@ main(){
 	#3
 	checkFilesPermission 'maestros' 's/.\(.\).\+/\1/' 'r' 'lectura'
 	checkFilesPermission 'ejecutables' 's/...\(.\).\+/\1/' 'x' 'ejecucion'
-	
-	#5
-	declareVariables
-	
+
 	#6
 	executeDemonio
 
