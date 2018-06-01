@@ -119,7 +119,7 @@ En caso de que el sistema no haya sido nunca ejecutado, mostrará el PID del pro
 
 **Nota:** Anotar el PID devuelto por el comando para luego poder pararlo con `StopO.sh`.
 
-## Detener el comandoo
+## Detener el comando
 
 El comando anterior ejecuta un demonio que debe ser detenido (en caso de que asi se lo requiera) de la siguiente forma:
 	
@@ -131,6 +131,8 @@ o bien, desde cualquier path
 
 donde `PID` es el devuelto por el `Inicio.sh`.
 
-### Ejecutar comandos
+### Procesado de Archivos 
+
+Una vez que el sistema esté corriendo, se deberá alimentarlo colocando en la carpeta de arribos (configurada en la instalación). Es de ella que el sistema leerá y procesará.
 
 ### Detener comandos

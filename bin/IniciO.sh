@@ -5,11 +5,16 @@ source "lib/logger.sh"
 source "lib/requirement.sh"
 
 COMANDOACTUAL="IniciO"
-LOGFILE="$GRUPO/$LOGDIR/inicio.log"
+#LOGFILE="$logs/inicio.log"
 DETECTO="DetectO.sh"
 
+findLogFile(){
+	DIRLOG=`grep "^logs-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^logs-\(.*\)-[^-]*-[^-]*$+\1+"`
+	LOGFILE="$DIRLOG/inicio.log"
+}
+
 ############# 1 VERIFICAR ARCHIVO CONFIGURACION #############
-verificarArchivoConfiguracion(){
+configFileVerification(){
 	if ! verifyConfigFile
 	then
 		showError "No se puede continuar ya que no se encontro el archivo de configuracion."
@@ -17,8 +22,8 @@ verificarArchivoConfiguracion(){
 	fi	
 }
 
-############# 2 VERIFICAR INICIALIZACION #############
-verificarInicializacion(){
+############# 2 REALIZAR TODAS LAS VERIFICACIONES #############
+performVerifications(){
 
 	# corrobora que esten todas las carpetas del sistema dentro del config
 	if ! verifyFoldersConfig
@@ -54,34 +59,11 @@ verificarInicializacion(){
 }
 
 
-############# 2.1 VERIFICACION COMANDOS #############
-# verifyComandos(){
-
-# 	COMANDOS=("detectO.sh" "interpretO.sh" "reportO.sh" "stopO.sh")
-# 	showInfo "Corroborando que todas los comandos existan..."
-# 	COUNT=0
-# 	for COMANDO in ${COMANDOS[@]}
-# 		do
-# 			if [ ! -f "$COMANDO" ]
-# 			then
-# 				showError "El comando $COMANDO no existe"
-# 				showInfo ""
-# 				exit 1
-# 			fi
-# 		done
-# 	showInfo "Se encontraron todos los comandos"
-# 	showInfo ""
-
-# 	echo "verify comandos ok"
-# }
-
-
 ############# 2.2 PERMISO A DETECTO #############
 permissionToDetecto(){
 	chmod +x "$GRUPO/$BINDIR/$DETECTO"
 
 	showInfo "Se otorgo permiso de ejecucion a $DETECTO"
-
 }
 
 ############# 3 VERIFICACION DE PERMISOS DE LECTURA/EJECUCION #############
@@ -111,17 +93,34 @@ checkFilesPermission(){
 
 ############# 4 DECLARACION DE VARIABLES DE AMBIENTE #############
 declareVariables(){
+
+	BINDIR=`grep "^ejecutables-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^ejecutables-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export BINDIR # directorio de ejecutables
+
+	MASTERDIR=`grep "^maestros-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^maestros-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export MASTERDIR # directorio de archivos maestros y tablas del sistema
+	
+	ARRIVEDIR=`grep "^arribos-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^arribos-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export ARRIVEDIR # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
+	
+	ACCEPTEDDIR=`grep "^aceptados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^aceptados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export ACCEPTEDDIR # directorio donde se depositan temporalmente las novedades aceptadas
+	
+	REJECTEDDIR=`grep "^rechazados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^rechazados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export REJECTEDDIR # directorio donde se depositan todos los archivos rechazados
+	
+	PROCESSEDDIR=`grep "^procesados-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^procesados-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
+	
+	REPORTDIR=`grep "^reportes-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^reportes-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export REPORTDIR # Directorio donde se depositan los reportes
+
+	LOGDIR=`grep "^logs-.*-[^-]*-[^-]*$" "$CONFIGFILE" | sed "s+^logs-$GRUPO\/\(.*\)-[^-]*-[^-]*$+\1+"`
+	export LOGDIR # directorio donde se depositan los logs de los comandos	
+
 	export GRUPO # directorio de instalacion
 	export CONFIGDIR # directorio del archivo de configuracion
 	export LIBDIR # directorio donde se depositan las librerias
-	export BINDIR # directorio de ejecutables
-	export MASTERDIR # directorio de archivos maestros y tablas del sistema
-	export ARRIVEDIR # directorio de arribo de archivos externos, es decir, los archivos que remiten las subsidiarias
-	export ACCEPTEDDIR # directorio donde se depositan temporalmente las novedades aceptadas
-	export REJECTEDDIR # directorio donde se depositan todos los archivos rechazados
-	export PROCESSEDDIR # directorio donde se depositan los archivos procesados 
-	export REPORTDIR # Directorio donde se depositan los reportes
-	export LOGDIR # directorio donde se depositan los logs de los comandos
 	export DETECTOSLEEP # tiempo que duerme DetectO.sh
 }
 
@@ -158,10 +157,14 @@ showAlert(){
 
 main(){
 	#1
-	verificarArchivoConfiguracion
+	findLogFile
+	configFileVerification
 	
+	#5
+	declareVariables
+
 	#2
-	if ! verificarInicializacion
+	if ! performVerifications
 	then
 		showError "El sistema contiene errores en sus configuración"
 		showError "Ejecute la opción -r para reparar el sistema"
@@ -172,23 +175,11 @@ main(){
 	#3
 	checkFilesPermission 'maestros' 's/.\(.\).\+/\1/' 'r' 'lectura'
 	checkFilesPermission 'ejecutables' 's/...\(.\).\+/\1/' 'x' 'ejecucion'
-	
-	#5
-	declareVariables
-	
+
 	#6
 	executeDemonio
+
+	showInfo "¡Proceso de inicializacion finalizado!" true
 }
 
 main $@
-
-# el sistema nunca fue inicializado
-#	verificar existencia del config, existencia de todos los directorios en el config y verificar las carpetas
-#	verificar existencia: comandos(detecto, stopO, interpretO, reportO), archivos (maestros, dirconf/install.conf)
-#	verificar los permisos, corregir e informar cuales fueron modificados y cuales no
-#	setear variables de ambientes necesarias en el demonio (borrarlas en el stopO) -> export o declare -x
-#	correr domonio (grep detecto devuelve la linea con PID)
-		#si corre, logueo process id
-		#sino, inicializar demonio, mostrar y loguear pid
-
-# Crear stopO: consulta si existe demonio corriendo, si existe darle kill -9 PID, loguear y mostrar por pantalla
