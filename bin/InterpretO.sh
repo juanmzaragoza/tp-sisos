@@ -94,6 +94,15 @@ buildHeader() {
 	done <<< "$HEADER_LIST"
 }
 
+# $1: file to check
+cleanFile() {
+	CHAR=`tail -c 1 "$1"`
+	if [ -n "$CHAR" ]
+	then
+		sed -i -e '$a\' "$1"
+	fi
+}
+
 # $1 : Path al archivo con informacion del sistema (Ejemplo "A-6-2017-05")
 # $2 : Separador de campos extraido de T1
 # $3 : Nombre limpio del archivo
@@ -103,13 +112,18 @@ buildValues() {
 	GOOD_LINES=0
 	BAD_LINES=0
 	READING_FILE="$1"
-	echo "." >> "$READING_FILE"
+	cleanFile "$READING_FILE"
 	while read -r LINE
 	do
 		if [ -n "$LINE" ]
 		then
 			((TOTAL_LINES++))
-			LOCAL_LINE=${LINE::-1}
+			if [[ "$LINE" =~ $'\r' ]]
+			then
+				LOCAL_LINE=${LINE::-1}
+			else
+				LOCAL_LINE=$LINE
+			fi
 			i=0
 			VALUES=()
 			while (( i < "$LENGHT" ))
@@ -213,7 +227,12 @@ getNum () {
 	DECIMAL_LONG=`echo "$1" | sed "s/^\([^.]*\)\.\(.*\)$/\2/1"`
 	INT_VALUE=`echo "$3" | sed "s/^\([^$2]*\).*$/\1/"`
 	DECIMAL_VALUE=`echo "$3" | sed "s/^\([^$2]*\).\(.*\)$/\2/"`
-	NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
+	if [ -z "$DECIMAL_VALUE" ]
+	then
+		NEW_VALUE="$INT_VALUE"
+	else
+		NEW_VALUE="$INT_VALUE,$DECIMAL_VALUE"
+	fi
 	eval "$4=$NEW_VALUE"
 }
 
