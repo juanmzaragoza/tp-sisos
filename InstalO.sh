@@ -275,7 +275,7 @@ createDirectories(){
 	# creacion carpetas del sistema
 	for i in ${DIRS[@]}
 	do
-        mkdir "$GRUPO/$i" 
+        mkdir -p "$GRUPO/$i" 
         showInfo "Se creó el directorio de ${NAMES[$COUNT]} en $GRUPO/$i"
         COUNT=`expr $COUNT + 1`
 	done
