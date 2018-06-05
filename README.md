@@ -35,9 +35,9 @@ O bien, descargar el paquete `tpsisos.tgz` desde [aqui](CompletarConURL)
 
 En caso de haber descargado la versión comprimida del mismo, ejecutar
 
-	tar zxvf tpsisos.tgz -C /folder/where/to/save/tpsisos
+	tar zxvf tpsisos.tgz
 
-**Nota:** tenga en cuenta que debe descomprimir dentro de la carpeta `tpsisos/`.
+**Nota:** tenga en cuenta que la descompresion generara la carpeta `tpsisos/`.
 
 ### Que obtenemos de la descompresión?
 
