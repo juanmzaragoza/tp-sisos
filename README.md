@@ -54,7 +54,7 @@ Al descomprimir el paquete, encontraremos dentro del directorio creado las sigui
 
 ### Requerimientos previos
 
-Para poder instalar el sistema, debe encontrarse dentro de la carpeta que ha descompimido. A este carpeta la denominaremos `ROOT_FOLDER` de ahora en más.
+Para poder instalar el sistema, debe encontrarse dentro de la carpeta que ha descompimido. A esta carpeta la denominaremos `ROOT_FOLDER` de ahora en más.
 
 Luego, necesita tener permisos para escribir la carpeta `grupo02/` (con permisos de administrador):
 
@@ -135,4 +135,6 @@ donde `PID` es el devuelto por el `Inicio.sh`.
 
 Una vez que el sistema esté corriendo, se deberá alimentarlo colocando en la carpeta de arribos (configurada en la instalación). Es de ella que el sistema leerá y procesará.
 
-### Detener comandos
+Una vez que el DetectO.sh clasifique los archivos entre aceptados y rechazados, el InterpretO.sh se encargará de porcesarlos, y generar el Archivo de Préstamos Personales por País, que se utilizará en el ReportO.pl para generar los reportes finales.
+
+Para ejecutar el programa ReportO.pl simplemente se debe inicializar el ambiente con el IniciO.sh, y luego ejecutar el script de Perl ReportO.pl. 
