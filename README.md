@@ -29,7 +29,7 @@ Para descargar el paquete puede realizar un clone de este proyecto
 
 	git clone https://github.com/juanmzaragoza/tp-sisos.git tpsisos
 
-O bien, descargar el paquete `tpsisos.tgz` desde [aqui](CompletarConURL)
+O bien, descargar el paquete `tpsisos.tgz` desde [aqui](https://github.com/juanmzaragoza/tp-sisos)
 
 ## Descompresión del paquete
 
