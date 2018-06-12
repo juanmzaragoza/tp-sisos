@@ -356,6 +356,9 @@ sub cargar_maestro {
         $sistema_id = shift(@campos);
         my(%prestamo);
         @prestamo{@claves} = @campos;
+        $prestamo{"ctb_anio"} = sprintf("%0004d", $prestamo{"ctb_anio"});
+        $prestamo{"ctb_mes"} = sprintf("%02d", $prestamo{"ctb_mes"});
+        $prestamo{"ctb_dia"} = sprintf("%02d", $prestamo{"ctb_dia"});
         my($fecha_prestamo) = Time::Piece->strptime($prestamo{"ctb_anio"}." ".$prestamo{"ctb_mes"}." ".$prestamo{"ctb_dia"}, "%Y %m %d");
         if(fecha_en_intervalo($fecha_desde, $fecha_hasta, \$fecha_prestamo)) {
           $prestamo_id = $prestamo{"pres_id"};
